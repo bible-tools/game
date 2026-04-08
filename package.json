@@ -1,0 +1,19 @@
+{
+  "name": "bible-tools-game",
+  "version": "1.0.0",
+  "description": "Bible Tools - Game",
+  "license": "AGPL-3.0",
+  "author": "",
+  "type": "module",
+  "main": "build.mjs",
+  "scripts": {
+    "clean": "rimraf service-worker.js workbox-*.js",
+    "build": "workbox generateSW service-worker/workbox-config.cjs",
+    "start": "serve -s ."
+  },
+  "devDependencies": {
+    "rimraf": "^6.1.3",
+    "serve": "^14.2.6",
+    "workbox-cli": "^7.4.0"
+  }
+}

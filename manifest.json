@@ -1,0 +1,82 @@
+{
+  "background_color": "#000000",
+  "description": "Bible Tools - Game.",
+  "display": "fullscreen",
+  "id": "bible-tools-game",
+  "name": "Bible Tools - Game",
+  "short_name": "Bible Tools - Game",
+  "start_url": "https://bible-tools.github.io/game/",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "purpose": "any",
+      "sizes": "48x48",
+      "src": "https://bible-tools.github.io/game/assets/icons/48.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "72x72",
+      "src": "https://bible-tools.github.io/game/assets/icons/72.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "96x96",
+      "src": "https://bible-tools.github.io/game/assets/icons/96.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "128x128",
+      "src": "https://bible-tools.github.io/game/assets/icons/128.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "152x152",
+      "src": "https://bible-tools.github.io/game/assets/icons/152.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "192x192",
+      "src": "https://bible-tools.github.io/game/assets/icons/192.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "512x512",
+      "src": "https://bible-tools.github.io/game/assets/icons/512.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "any",
+      "sizes": "1024x1024",
+      "src": "https://bible-tools.github.io/game/assets/icons/1024.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "1024x1024",
+      "src": "https://bible-tools.github.io/game/assets/icons/1024.png",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "form_factor": "wide",
+      "label": "bible-tools-game",
+      "sizes": "1396x626",
+      "src": "https://bible-tools.github.io/game/assets/screenshots/bible-tools-game-screenshot-1396x626.png",
+      "type": "image/png"
+    },
+    {
+      "form_factor": "narrow",
+      "label": "bible-tools-game",
+      "sizes": "842x1680",
+      "src": "https://bible-tools.github.io/game/assets/screenshots/bible-tools-game-screenshot-842x1680.png",
+      "type": "image/png"
+    }
+  ]
+}

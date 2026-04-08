@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#000000" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+    <title>Bible Tools - Game</title>
+    <style>
+      :root {
+        --absent: #939194;
+        --accent-hover: #45a049;
+        --accent: #4caf50;
+        --bg-primary: #f0f0f0;
+        --bg-secondary: #ffffff;
+        --border: #cccccc;
+        --correct: #66bb6a;
+        --error: #d32f2f;
+        --input-bg: #ffffff;
+        --present: #f3b72e;
+        --success: #2e7d32;
+        --text-primary: #333333;
+        --text-secondary: #555555;
+
+        --link-color: #1a6b1a;
+        --link-hover: #0d3d0d;
+      }
+
+      [data-theme="dark"] {
+        --absent: #48494b;
+        --accent-hover: #66bb6a;
+        --accent: #4caf50;
+        --bg-primary: #1a1a2e;
+        --bg-secondary: #16213e;
+        --border: #444444;
+        --correct: #66bb6a;
+        --error: #ef5350;
+        --input-bg: #0f3460;
+        --present: #f3b72e;
+        --success: #66bb6a;
+        --text-primary: #eaeaea;
+        --text-secondary: #b0b0b0;
+
+        --link-color: #81c784;
+        --link-hover: #a5d6a7;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        min-height: 100vh;
+        padding: 1.25rem;
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+
+      .page {
+        margin: 0 auto;
+        max-width: 45rem;
+      }
+
+      .page__header {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+      }
+
+      .page__title {
+        color: var(--text-primary);
+        font-size: 1.6rem;
+      }
+
+      .page__title-link--icon {
+        text-decoration: none;
+      }
+
+      .page__controls {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+      }
+
+      .page__translation-select,
+      .page__theme-toggle {
+        background: var(--input-bg);
+        border: 0.0625rem solid var(--border);
+        border-radius: 0.375rem;
+        color: var(--text-primary);
+        font-size: 0.95rem;
+        padding: 0.5rem 0.75rem;
+        transition: all 0.2s;
+      }
+
+      .page__theme-toggle {
+        background: var(--accent);
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .page__theme-toggle:hover {
+        background: var(--accent-hover);
+      }
+
+      .page__theme-toggle:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+
+      .page__translation-label {
+        font-size: 0.9rem;
+      }
+
+      .page__link {
+        color: var(--link-color);
+        text-decoration: underline;
+        text-underline-offset: 0.125rem;
+      }
+
+      .page__link:hover {
+        color: var(--link-hover);
+      }
+
+      .page__link:focus-visible {
+        border-radius: 0.125rem;
+        outline: 0.125rem solid var(--link-color);
+        outline-offset: 0.1875rem;
+        text-decoration: none;
+      }
+
+      .page__footer {
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+        padding: 0.9375rem;
+        text-align: center;
+      }
+
+      @media (max-width: 45rem) {
+        .page__title {
+          font-size: 1.3rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="page__header">
+        <h1 class="page__title">
+          <a
+            class="page__link page__title-link page__title-link--icon"
+            href="https://bible-tools.github.io/app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Bible Tools - App (opens in new tab)"
+            >📖</a
+          >
+          <a
+            class="page__link page__title-link"
+            href="https://bible-tools.github.io/game/"
+            >Bible Tools - Game</a
+          >
+        </h1>
+        <div class="page__controls">
+          <label class="page__translation-label" for="translation"
+            >Translation:</label
+          >
+          <select class="page__translation-select" id="translation"></select>
+          <button class="page__theme-toggle" id="themeToggle">🌙 Dark</button>
+        </div>
+      </header>
+
+      <bible-tools-game id="game"></bible-tools-game>
+
+      <footer class="page__footer">
+        <p>
+          Data from
+          <a
+            class="page__link"
+            href="https://github.com/bible-tools/data"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="https://github.com/bible-tools/data (opens in new tab)"
+            >https://github.com/bible-tools/data</a
+          >
+          •
+          <a class="page__link" href="https://bible-tools.github.io/app/"
+            >Bible Tools</a
+          >
+        </p>
+      </footer>
+    </div>
+
+    <script type="module">
+      const API_ROOT = "https://bible-tools.github.io/data/translations";
+
+      // Definitive translation options from https://bible-tools.github.io/app/dist/esm/BibleToolsPreferences.js.
+      const preferences = {
+        defaultVersion: "KJV",
+        translations: [
+          {
+            language: "ar",
+            version: "AraSVD",
+            label: "AraSVD",
+            languageLabel: "Arabic",
+          },
+          {
+            language: "en",
+            version: "KJV",
+            label: "KJV",
+            languageLabel: "English",
+          },
+          {
+            language: "en",
+            version: "ASV",
+            label: "ASV",
+            languageLabel: "English",
+          },
+          {
+            language: "en",
+            version: "WEB",
+            label: "WEB",
+            languageLabel: "English",
+          },
+          {
+            language: "fr",
+            version: "FreSegond",
+            label: "FreSegond",
+            languageLabel: "French",
+          },
+          {
+            language: "de",
+            version: "GerElb1905",
+            label: "GerElb1905",
+            languageLabel: "German",
+          },
+          {
+            language: "es",
+            version: "SpaRV",
+            label: "SpaRV",
+            languageLabel: "Spanish",
+          },
+        ],
+      };
+
+      const translationByVersion = Object.fromEntries(
+        preferences.translations.map((translation) => [
+          translation.version,
+          translation,
+        ]),
+      );
+
+      function getSelectedTranslation(version) {
+        return (
+          translationByVersion[version] ||
+          translationByVersion[preferences.defaultVersion]
+        );
+      }
+
+      function getTranslationBaseUrl(version) {
+        const selected = getSelectedTranslation(version);
+
+        return `${API_ROOT}/${selected.language}/${selected.version}`;
+      }
+
+      function populateTranslationSelect() {
+        const select = document.getElementById("translation");
+        if (!select) return;
+
+        select.innerHTML = preferences.translations
+          .map(
+            (translation) =>
+              `<option value="${translation.version}">${translation.languageLabel} - ${translation.label}</option>`,
+          )
+          .join("");
+
+        select.value = preferences.defaultVersion;
+      }
+
+      // Deterministic hash-based day index
+      function getDayIndex(date) {
+        let hash = new URLSearchParams(window.location.search).get("hash");
+
+        if (hash !== null) {
+          const parsedHash = Number.parseInt(hash, 10);
+
+          if (Number.isFinite(parsedHash)) {
+            return Math.abs(parsedHash);
+          }
+        }
+
+        const dateStr = date.toISOString().split("T")[0];
+        for (let i = 0; i < dateStr.length; i++) {
+          hash = (hash << 5) - hash + dateStr.charCodeAt(i);
+          hash = hash & hash; // Convert to 32-bit integer
+        }
+
+        return Math.abs(hash);
+      }
+
+      // Letter evaluation
+      function evaluateGuess(guess, target) {
+        const result = [];
+        const targetChars = target.toLowerCase().split("");
+        const guessChars = guess.toLowerCase().split("");
+
+        // First pass: mark correct positions
+        for (let i = 0; i < guessChars.length; i++) {
+          if (guessChars[i] === targetChars[i]) {
+            result[i] = "correct";
+
+            targetChars[i] = null;
+          } else {
+            result[i] = "absent";
+          }
+        }
+
+        // Second pass: mark present letters
+        for (let i = 0; i < guessChars.length; i++) {
+          if (result[i] !== "correct") {
+            const idx = targetChars.indexOf(guessChars[i]);
+            if (idx !== -1) {
+              result[i] = "present";
+
+              targetChars[idx] = null;
+            }
+          }
+        }
+
+        return result;
+      }
+
+      class BibleToolsGame extends HTMLElement {
+        constructor() {
+          super();
+
+          this.attachShadow({ mode: "open" });
+
+          this.state = {
+            translation: preferences.defaultVersion,
+            referenceCache: null,
+            canonicalBooks: [],
+            currentBook: null,
+            currentChapter: null,
+            currentVerseNum: null,
+            verseText: null,
+            guesses: [],
+            attempts: 0,
+            solved: false,
+            gameOver: false,
+            loading: true,
+            error: null,
+            animateLastRow: false,
+            today: new Date(),
+          };
+        }
+
+        connectedCallback() {
+          this.render();
+          this.setupEvents();
+          this.loadGame();
+        }
+
+        render() {
+          this.shadowRoot.innerHTML = `
+          <style>
+            :host {
+              display: block;
+            }
+
+            .game {
+              margin: 0 auto;
+              max-width: 45rem;
+              padding: 0;
+            }
+
+            @keyframes flipIn {
+              0% {
+                opacity: 0;
+                transform: rotateX(-90deg);
+              }
+
+              50% {
+                opacity: 1;
+                transform: rotateX(0);
+              }
+
+              100% {
+                opacity: 1;
+                transform: rotateX(0);
+              }
+            }
+
+            .game__state-message {
+              color: var(--text-secondary);
+              padding: 1.875rem;
+              text-align: center;
+            }
+
+            .game__state-message--error {
+              color: var(--error);
+              padding: 1.25rem;
+              text-align: center;
+            }
+
+            .game__verse-card {
+              background: var(--bg-secondary);
+              border-left: 0.25rem solid var(--accent);
+              border-radius: 0.75rem;
+              box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.1);
+              font-size: 1.05rem;
+              line-height: 1.6;
+              margin: 1.25rem 0;
+              padding: 1.25rem;
+            }
+
+            .game__verse-text {
+              color: var(--text-primary);
+              font-style: italic;
+              margin-bottom: 0.9375rem;
+            }
+
+            .game__verse-ref {
+              color: var(--text-secondary);
+              font-size: 0.9rem;
+              font-weight: 500;
+            }
+
+            .game__section {
+              background: var(--bg-secondary);
+              border-radius: 0.75rem;
+              box-shadow: 0 0.125rem 0.625rem rgba(0, 0, 0, 0.1);
+              margin: 1.25rem 0;
+              padding: 1.25rem;
+            }
+
+            .game__prompt {
+              color: var(--text-primary);
+              margin-bottom: 0.9375rem;
+            }
+
+            .game__guesses-grid {
+              margin-bottom: 1.25rem;
+            }
+
+            .game__guess-row {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.375rem;
+              margin-bottom: 0.5rem;
+              perspective: 25rem;
+            }
+
+            .game__letter-box {
+              align-items: center;
+              background: var(--bg-secondary);
+              border: 0.125rem solid var(--border);
+              border-radius: 0.25rem;
+              color: var(--text-primary);
+              display: flex;
+              font-size: 0.85rem;
+              font-weight: bold;
+              height: 2rem;
+              justify-content: center;
+              width: 2rem;
+            }
+
+            .game__letter-box--correct {
+              background: var(--correct);
+              border-color: var(--correct);
+              color: white;
+            }
+
+            .game__letter-box--present {
+              background: var(--present);
+              border-color: var(--present);
+              color: white;
+            }
+
+            .game__letter-box--absent {
+              background: var(--absent);
+              border-color: var(--absent);
+              color: white;
+            }
+
+            .game__input-group {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.625rem;
+              margin-bottom: 0.9375rem;
+            }
+
+            .game__input {
+              flex: 1;
+              min-width: 12.5rem;
+            }
+
+            .game__input-group--actions {
+              gap: 0.625rem;
+              justify-content: center;
+            }
+
+            .game__input,
+            .game__button {
+              background: var(--input-bg);
+              border: 0.0625rem solid var(--border);
+              border-radius: 0.375rem;
+              color: var(--text-primary);
+              font-size: 0.95rem;
+              padding: 0.5rem 0.75rem;
+              transition: all 0.2s;
+            }
+
+            .game__button {
+              background: var(--accent);
+              border: none;
+              color: white;
+              cursor: pointer;
+              font-weight: 500;
+            }
+
+            .game__button:hover {
+              background: var(--accent-hover);
+            }
+
+            .game__button:disabled {
+              cursor: not-allowed;
+              opacity: 0.6;
+            }
+
+            .game__feedback {
+              border-radius: 0.5rem;
+              display: none;
+              font-weight: 500;
+              margin: 0.625rem 0;
+              padding: 0.75rem 0.9375rem;
+            }
+
+            .game__feedback--show {
+              display: block;
+            }
+
+            .game__feedback--correct {
+              background: rgba(102, 187, 106, 0.15);
+              border: 0.0625rem solid var(--correct);
+              color: var(--correct);
+            }
+
+            .game__feedback--incorrect {
+              background: rgba(239, 83, 80, 0.15);
+              border: 0.0625rem solid var(--error);
+              color: var(--error);
+            }
+
+            .game__feedback--hint {
+              background: rgba(243, 183, 46, 0.15);
+              border: 0.0625rem solid #f3b72e;
+              color: #f3b72e;
+            }
+
+            .game__answer-reveal {
+              background: rgba(76, 175, 80, 0.1);
+              border: 0.0625rem solid var(--accent);
+              border-radius: 0.5rem;
+              display: none;
+              margin-top: 0.9375rem;
+              padding: 0.9375rem;
+            }
+
+            .game__answer-reveal--show {
+              display: block;
+            }
+
+            .game__answer-label {
+              color: var(--accent);
+            }
+
+            @media (max-width: 45rem) {
+              .game__verse-text {
+                font-size: 0.95rem;
+              }
+
+              .game__input-group {
+                flex-direction: column;
+              }
+
+              .game__input,
+              .game__button {
+                width: 100%;
+              }
+            }
+          </style>
+          <div class="game">
+            <div id="mainContent">
+              <div class="game__state-message">Loading today's verse...</div>
+            </div>
+          </div>
+        `;
+        }
+
+        setupEvents() {
+          const root = this.shadowRoot;
+
+          // Listen for translation changes
+          document
+            .getElementById("translation")
+            ?.addEventListener("change", (e) => {
+              this.state.translation = e.target.value;
+              this.state.referenceCache = null;
+              this.state.canonicalBooks = [];
+              this.state.guesses = [];
+              this.state.attempts = 0;
+              this.state.solved = false;
+              this.state.gameOver = false;
+              this.loadGame();
+            });
+        }
+
+        async loadGame() {
+          this.state.loading = true;
+          this.state.error = null;
+          this.updateUI();
+
+          try {
+            // Load reference data
+            const reference = await this.getReference();
+
+            // Build list of canonical books
+            if (this.state.canonicalBooks.length === 0) {
+              this.state.canonicalBooks = Object.keys(reference.books);
+            }
+
+            // Get deterministic daily book and chapter
+            const dayIdx = getDayIndex(this.state.today);
+            const bookIdx = dayIdx % this.state.canonicalBooks.length;
+            const book = this.state.canonicalBooks[bookIdx];
+            const bookData = reference.books[book];
+
+            const chapterKeys = Object.keys(bookData.chapters);
+            const chapterIdx = (dayIdx + bookIdx) % chapterKeys.length;
+            const chapter = chapterKeys[chapterIdx];
+            const chapterData = bookData.chapters[chapter];
+
+            // Pick a verse deterministically
+            const verseCount = chapterData.verses;
+            const verseNum = ((dayIdx + bookIdx + chapterIdx) % verseCount) + 1;
+
+            // Fetch the verse
+            const verseData = await this.fetchVerse(book, chapter, verseNum);
+
+            this.state.currentBook = book;
+            this.state.currentChapter = parseInt(chapter, 10);
+            this.state.currentVerseNum = verseNum;
+            this.state.verseText = verseData.text;
+            this.state.loading = false;
+
+            this.updateUI();
+          } catch (err) {
+            console.error("Error loading game:", err);
+
+            this.state.error = "Failed to load today's verse. Try again later.";
+            this.state.loading = false;
+
+            this.updateUI();
+          }
+        }
+
+        async getReference() {
+          if (!this.state.referenceCache) {
+            const baseUrl = getTranslationBaseUrl(this.state.translation);
+            const res = await fetch(`${baseUrl}/reference.json`);
+
+            if (!res.ok) throw new Error("Failed to fetch reference");
+
+            this.state.referenceCache = await res.json();
+          }
+
+          return this.state.referenceCache;
+        }
+
+        async fetchVerse(book, chapter, verse) {
+          const baseUrl = getTranslationBaseUrl(this.state.translation);
+          const bookUrl = encodeURIComponent(book);
+          const url = `${baseUrl}/${bookUrl}/${chapter}/${verse}/index.json`;
+          const res = await fetch(url);
+
+          if (!res.ok) throw new Error(`Verse not found: ${url}`);
+
+          return res.json();
+        }
+
+        updateUI() {
+          const root = this.shadowRoot;
+          const content = root.getElementById("mainContent");
+
+          if (this.state.loading) {
+            content.innerHTML =
+              '<div class="game__state-message">Loading today\'s verse...</div>';
+
+            return;
+          }
+
+          if (this.state.error) {
+            content.innerHTML = `<div class="game__state-message game__state-message--error">${this.state.error}</div>`;
+
+            return;
+          }
+
+          let html = `
+            <div class="game__verse-card">
+              <div class="game__verse-text">"${this.escapeHtml(this.state.verseText)}"</div>
+              <div class="game__verse-ref">${this.state.translation} • ${this.state.currentChapter}:${this.state.currentVerseNum}</div>
+            </div>
+
+            <div class="game__section">
+              <h3 class="game__prompt">What book of the Bible?</h3>
+              <div class="game__guesses-grid" id="guessesGrid">
+                ${this.renderGuesses()}
+              </div>
+              <div id="feedback" class="game__feedback"></div>
+              ${this.renderGuessInput()}
+              ${this.renderAnswerReveal()}
+            </div>
+          `;
+
+          content.innerHTML = html;
+          this.bindEvents();
+        }
+
+        renderGuesses() {
+          let html = "";
+
+          const newestIdx = this.state.guesses.length - 1;
+          const animateRow = this.state.animateLastRow;
+
+          this.state.animateLastRow = false;
+
+          for (let i = 0; i < this.state.guesses.length; i++) {
+            const guess = this.state.guesses[i];
+            const isNew = animateRow && i === newestIdx;
+
+            html += '<div class="game__guess-row">';
+
+            for (let j = 0; j < guess.length; j++) {
+              const letter = guess[j].letter ?? "";
+              const status = guess[j].status;
+              const style = isNew
+                ? `animation: flipIn 0.6s ease-out ${j * 150}ms both;`
+                : "";
+
+              html += `<div class="game__letter-box game__letter-box--${status}" style="${style}">${letter.toUpperCase()}</div>`;
+            }
+
+            html += "</div>";
+          }
+
+          return html;
+        }
+
+        renderGuessInput() {
+          if (this.state.gameOver) {
+            return `
+              <div class="game__input-group game__input-group--actions">
+                <button class="game__button game__button--new-game" onclick="document.getElementById('game').newGame()">New Game</button>
+              </div>
+            `;
+          }
+
+          return `
+            <div class="game__input-group">
+              <input
+                class="game__input"
+                type="text"
+                id="guessInput"
+                placeholder="Type book name..."
+                autocomplete="off"
+                ${this.state.attempts >= 6 ? "disabled" : ""}
+              >
+              <button class="game__button game__button--submit" id="submitBtn" ${this.state.attempts >= 6 ? "disabled" : ""}>
+                Guess
+              </button>
+            </div>
+          `;
+        }
+
+        renderAnswerReveal() {
+          if (!this.state.gameOver) return "";
+
+          return `
+            <div class="game__answer-reveal game__answer-reveal--show">
+              <strong class="game__answer-label">Answer:</strong> ${this.escapeHtml(this.state.currentBook)}
+              ${this.state.currentChapter}:${this.state.currentVerseNum}
+            </div>
+          `;
+        }
+
+        bindEvents() {
+          const input = this.shadowRoot.getElementById("guessInput");
+          const submitBtn = this.shadowRoot.getElementById("submitBtn");
+          const feedback = this.shadowRoot.getElementById("feedback");
+
+          if (input) {
+            input.focus();
+            input.addEventListener("keypress", (e) => {
+              if (e.key === "Enter") this.handleGuess(input, feedback);
+            });
+          }
+
+          if (submitBtn) {
+            submitBtn.addEventListener("click", () =>
+              this.handleGuess(input, feedback),
+            );
+          }
+        }
+
+        handleGuess(input, feedbackEl) {
+          if (!input || this.state.gameOver) return;
+
+          const guess = input.value.trim();
+          if (!guess) {
+            feedbackEl.textContent = "Please enter a book name.";
+            feedbackEl.className =
+              "game__feedback game__feedback--show game__feedback--incorrect";
+
+            return;
+          }
+
+          const isCorrect =
+            guess.toLowerCase() === this.state.currentBook.toLowerCase();
+          const evaluation = evaluateGuess(guess, this.state.currentBook);
+
+          // Store guess
+          this.state.guesses.push(
+            evaluation.map((status, i) => ({
+              letter: guess[i],
+              status,
+            })),
+          );
+
+          this.state.attempts++;
+
+          if (isCorrect) {
+            this.state.solved = true;
+            this.state.gameOver = true;
+
+            feedbackEl.textContent = `🎉 Correct! The book is ${this.state.currentBook}.`;
+            feedbackEl.className =
+              "game__feedback game__feedback--show game__feedback--correct";
+          } else if (this.state.attempts >= 6) {
+            this.state.gameOver = true;
+
+            feedbackEl.textContent = `Game Over! The answer was ${this.state.currentBook}.`;
+            feedbackEl.className =
+              "game__feedback game__feedback--show game__feedback--incorrect";
+          } else {
+            feedbackEl.textContent = `${6 - this.state.attempts} guesses remaining.`;
+            feedbackEl.className =
+              "game__feedback game__feedback--show game__feedback--incorrect";
+          }
+
+          input.value = "";
+
+          this.state.animateLastRow = true;
+
+          this.updateUI();
+        }
+
+        newGame() {
+          this.state.guesses = [];
+          this.state.attempts = 0;
+          this.state.solved = false;
+          this.state.gameOver = false;
+
+          this.loadGame();
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+
+          return div.innerHTML;
+        }
+      }
+
+      populateTranslationSelect();
+
+      customElements.define("bible-tools-game", BibleToolsGame);
+
+      // Theme toggle
+      const themeToggle = document.getElementById("themeToggle");
+      const html = document.documentElement;
+
+      if (localStorage.getItem("bible-tools-game-theme") === "dark") {
+        html.setAttribute("data-theme", "dark");
+
+        themeToggle.textContent = "☀️ Light";
+      }
+
+      themeToggle.addEventListener("click", () => {
+        const isDark = html.getAttribute("data-theme") === "dark";
+        if (isDark) {
+          html.removeAttribute("data-theme");
+
+          themeToggle.textContent = "🌙 Dark";
+
+          localStorage.setItem("bible-tools-game-theme", "light");
+        } else {
+          html.setAttribute("data-theme", "dark");
+
+          themeToggle.textContent = "☀️ Light";
+
+          localStorage.setItem("bible-tools-game-theme", "dark");
+        }
+      });
+    </script>
+  </body>
+</html>
