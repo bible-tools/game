@@ -366,6 +366,8 @@
             loading: true,
             error: null,
             animateLastRow: false,
+            suggestionList: [],
+            activeSuggestion: -1,
             today: new Date(),
           };
         }
@@ -498,6 +500,13 @@
               color: white;
             }
 
+            .game__letter-box--more {
+              background: transparent;
+              border-color: var(--accent);
+              border-style: dashed;
+              color: var(--accent);
+            }
+
             .game__input-group {
               display: flex;
               flex-wrap: wrap;
@@ -590,6 +599,42 @@
               color: var(--accent);
             }
 
+            .game__autocomplete-wrapper {
+              position: relative;
+            }
+
+            .game__suggestions {
+              background: var(--bg-secondary);
+              border: 0.0625rem solid var(--border);
+              border-radius: 0.375rem;
+              box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+              left: 0;
+              list-style: none;
+              max-height: 12rem;
+              overflow-y: auto;
+              position: absolute;
+              right: 0;
+              top: 100%;
+              z-index: 10;
+            }
+
+            .game__suggestions:empty {
+              display: none;
+            }
+
+            .game__suggestion-item {
+              color: var(--text-primary);
+              cursor: pointer;
+              font-size: 0.95rem;
+              padding: 0.5rem 0.75rem;
+            }
+
+            .game__suggestion-item:hover,
+            .game__suggestion-item--active {
+              background: var(--accent);
+              color: white;
+            }
+
             @media (max-width: 45rem) {
               .game__verse-text {
                 font-size: 0.95rem;
@@ -627,6 +672,8 @@
               this.state.attempts = 0;
               this.state.solved = false;
               this.state.gameOver = false;
+              this.state.suggestionList = [];
+              this.state.activeSuggestion = -1;
               this.loadGame();
             });
         }
@@ -782,18 +829,21 @@
           }
 
           return `
-            <div class="game__input-group">
-              <input
-                class="game__input"
-                type="text"
-                id="guessInput"
-                placeholder="Type book name..."
-                autocomplete="off"
-                ${this.state.attempts >= 6 ? "disabled" : ""}
-              >
-              <button class="game__button game__button--submit" id="submitBtn" ${this.state.attempts >= 6 ? "disabled" : ""}>
-                Guess
-              </button>
+            <div class="game__autocomplete-wrapper" id="autocompleteWrapper">
+              <div class="game__input-group">
+                <input
+                  class="game__input"
+                  type="text"
+                  id="guessInput"
+                  placeholder="Type book name..."
+                  autocomplete="off"
+                  ${this.state.attempts >= 6 ? "disabled" : ""}
+                >
+                <button class="game__button game__button--submit" id="submitBtn" ${this.state.attempts >= 6 ? "disabled" : ""}>
+                  Guess
+                </button>
+              </div>
+              <ul class="game__suggestions" id="suggestionsList" role="listbox" aria-label="Book name suggestions"></ul>
             </div>
           `;
         }
@@ -816,15 +866,28 @@
 
           if (input) {
             input.focus();
-            input.addEventListener("keypress", (e) => {
-              if (e.key === "Enter") this.handleGuess(input, feedback);
-            });
+            input.addEventListener("input", () => this.handleInput(input));
+            input.addEventListener("keydown", (e) =>
+              this.handleInputKeydown(e, input, feedback),
+            );
           }
 
           if (submitBtn) {
-            submitBtn.addEventListener("click", () =>
-              this.handleGuess(input, feedback),
-            );
+            submitBtn.addEventListener("click", () => {
+              this.clearSuggestions();
+              this.handleGuess(input, feedback);
+            });
+          }
+
+          const wrapper = this.shadowRoot.getElementById("autocompleteWrapper");
+          if (wrapper) {
+            wrapper.addEventListener("focusout", () => {
+              setTimeout(() => {
+                if (!wrapper.contains(this.shadowRoot.activeElement)) {
+                  this.clearSuggestions();
+                }
+              }, 150);
+            });
           }
         }
 
@@ -845,12 +908,17 @@
           const evaluation = evaluateGuess(guess, this.state.currentBook);
 
           // Store guess
-          this.state.guesses.push(
-            evaluation.map((status, i) => ({
-              letter: guess[i],
-              status,
-            })),
-          );
+          const guessRow = evaluation.map((status, i) => ({
+            letter: guess[i],
+            status,
+          }));
+
+          // Indicate the answer continues beyond what was typed
+          if (!isCorrect && guess.length < this.state.currentBook.length) {
+            guessRow.push({ letter: "+", status: "more" });
+          }
+
+          this.state.guesses.push(guessRow);
 
           this.state.attempts++;
 
@@ -885,6 +953,8 @@
           this.state.attempts = 0;
           this.state.solved = false;
           this.state.gameOver = false;
+          this.state.suggestionList = [];
+          this.state.activeSuggestion = -1;
 
           this.loadGame();
         }
@@ -894,6 +964,110 @@
           div.textContent = text;
 
           return div.innerHTML;
+        }
+
+        handleInput(input) {
+          if (this.state.gameOver) {
+            this.clearSuggestions();
+            return;
+          }
+
+          const query = input.value.trim().toLowerCase();
+          if (!query) {
+            this.clearSuggestions();
+            return;
+          }
+
+          const books = this.state.canonicalBooks;
+          const prefix = books.filter((b) => b.toLowerCase().startsWith(query));
+          const substring = books.filter(
+            (b) =>
+              !b.toLowerCase().startsWith(query) &&
+              b.toLowerCase().includes(query),
+          );
+          const results = [...prefix, ...substring].slice(0, 8);
+
+          this.state.suggestionList = results;
+          this.state.activeSuggestion = -1;
+          this.renderSuggestionItems(input);
+        }
+
+        renderSuggestionItems(input) {
+          const list = this.shadowRoot.getElementById("suggestionsList");
+          if (!list) return;
+
+          if (this.state.suggestionList.length === 0) {
+            list.innerHTML = "";
+            return;
+          }
+
+          list.innerHTML = this.state.suggestionList
+            .map(
+              (book) =>
+                `<li class="game__suggestion-item" role="option" data-value="${this.escapeHtml(book)}">${this.escapeHtml(book)}</li>`,
+            )
+            .join("");
+
+          list.querySelectorAll(".game__suggestion-item").forEach((item) => {
+            item.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              this.selectSuggestion(input, item.dataset.value);
+            });
+          });
+        }
+
+        handleInputKeydown(e, input, feedback) {
+          const list = this.state.suggestionList;
+          const len = list.length;
+
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            this.state.activeSuggestion =
+              len === 0 ? -1 : (this.state.activeSuggestion + 1) % len;
+            this.updateActiveSuggestion();
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            this.state.activeSuggestion =
+              len === 0
+                ? -1
+                : (this.state.activeSuggestion - 1 + len) % len;
+            this.updateActiveSuggestion();
+          } else if (e.key === "Enter") {
+            if (this.state.activeSuggestion >= 0 && len > 0) {
+              e.preventDefault();
+              this.selectSuggestion(input, list[this.state.activeSuggestion]);
+            } else {
+              this.clearSuggestions();
+              this.handleGuess(input, feedback);
+            }
+          } else if (e.key === "Escape") {
+            this.clearSuggestions();
+          }
+        }
+
+        selectSuggestion(input, bookName) {
+          input.value = bookName;
+          this.clearSuggestions();
+          input.focus();
+        }
+
+        clearSuggestions() {
+          this.state.suggestionList = [];
+          this.state.activeSuggestion = -1;
+          const list = this.shadowRoot.getElementById("suggestionsList");
+          if (list) list.innerHTML = "";
+        }
+
+        updateActiveSuggestion() {
+          const list = this.shadowRoot.getElementById("suggestionsList");
+          if (!list) return;
+
+          list.querySelectorAll(".game__suggestion-item").forEach((item, i) => {
+            item.classList.toggle(
+              "game__suggestion-item--active",
+              i === this.state.activeSuggestion,
+            );
+          });
         }
       }
 
