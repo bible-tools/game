@@ -1393,13 +1393,22 @@
 
           for (let i = 0; i < canonicalBooks.length; i++) {
             const book = canonicalBooks[i];
-            const localized = getCanonicalBookNameByIndex(i + 1, languageCode);
+            const canonicalIndex = COMMUNITY_DEFAULT_CANONICAL_BOOKS.indexOf(book);
+
+            if (canonicalIndex === -1) {
+              builtFromStatic = false;
+              continue;
+            }
+
+            const localized = getCanonicalBookNameByIndex(
+              canonicalIndex + 1,
+              languageCode,
+            );
 
             if (localized) {
               staticMap[book] = localized;
             } else {
               builtFromStatic = false;
-              break;
             }
           }
 
@@ -1449,10 +1458,13 @@
               const book = canonicalBooks[i];
               const localizedName = indexBooks[i]?.name;
 
+              // Prefer our static canonical map for supported languages.
+              // Some translation indexes return English names even for localized versions.
               bookNameMap[book] =
-                typeof localizedName === "string" && localizedName.trim()
+                staticMap[book] ||
+                (typeof localizedName === "string" && localizedName.trim()
                   ? localizedName
-                  : staticMap[book] || book;
+                  : book);
             }
 
             this.state.localizedBookNamesCache[this.state.translation] =
@@ -1902,30 +1914,40 @@
             this.state.localizedBookNames.length > 0
               ? this.state.localizedBookNames
               : this.state.canonicalBooks;
+          const canonicalAliases =
+            this.state.filteredCanonicalBooks.length === books.length
+              ? this.state.filteredCanonicalBooks
+              : this.state.canonicalBooks;
+
           if (query.length === 0) {
-            // If only whitespace was entered, show the full canonical list so
-            // users can browse without typing in the translation's script.
             this.state.suggestionList = books;
             this.state.activeSuggestion = -1;
             this.renderSuggestionItems(input);
             return;
           }
 
-          const prefix = books.filter((b) =>
-            this.normalizeForMatch(b).startsWith(query),
-          );
-          const substring = books.filter(
-            (b) =>
-              !this.normalizeForMatch(b).startsWith(query) &&
-              this.normalizeForMatch(b).includes(query),
-          );
-          const results = [...prefix, ...substring];
+          const prefix = [];
+          const substring = [];
 
-          // If there are no matches (for example Latin letters while using an
-          // Arabic translation), fall back to the full canonical order list.
-          const suggestionList = results.length > 0 ? results : books;
+          for (let i = 0; i < books.length; i++) {
+            const displayName = books[i];
+            const alias = canonicalAliases[i] || "";
+            const displayNorm = this.normalizeForMatch(displayName);
+            const aliasNorm = this.normalizeForMatch(alias);
+            const startsWithMatch =
+              displayNorm.startsWith(query) || aliasNorm.startsWith(query);
+            const includesMatch =
+              !startsWithMatch &&
+              (displayNorm.includes(query) || aliasNorm.includes(query));
 
-          this.state.suggestionList = suggestionList;
+            if (startsWithMatch) {
+              prefix.push(displayName);
+            } else if (includesMatch) {
+              substring.push(displayName);
+            }
+          }
+
+          this.state.suggestionList = [...prefix, ...substring];
           this.state.activeSuggestion = -1;
           this.renderSuggestionItems(input);
         }
