@@ -1168,9 +1168,19 @@
         }
 
         resetCurrentGame() {
+          this.startDailyGame();
+        }
+
+        startDailyGame() {
+          this.state.dailyDateKey = getLocalDateKey();
           this.state.pendingGuessInput = "";
           this.resetPlayState();
-          this.updateUI();
+          this.setPuzzle(
+            makeDailyPuzzleId(this.state.dailyDateKey),
+            PUZZLE_MODE_DAILY,
+            { addHistoryEntry: true, pushUrl: true },
+          );
+          this.loadGame();
         }
 
         startRandomGame() {
@@ -1545,8 +1555,8 @@
 
           const actionsHtml = `
             <div class="game__input-group game__input-group--actions">
-              <button class="game__button game__button--secondary" id="resetBtn" aria-label="Reset current puzzle">Reset</button>
-              <button class="game__button" id="newGameBtn" aria-label="Start a new random puzzle">New Game</button>
+              <button class="game__button game__button--secondary" id="resetBtn" aria-label="Back to daily puzzle">Back to Daily</button>
+              <button class="game__button" id="newGameBtn" aria-label="Randomize puzzle">Randomize</button>
               <button class="game__button game__button--secondary" id="prevPuzzleBtn" aria-label="Go to previous puzzle" ${hasPrevious ? "" : "disabled"}>Previous</button>
               <button class="game__button game__button--secondary" id="nextPuzzleBtn" aria-label="Go to next puzzle" ${hasNext ? "" : "disabled"}>Next</button>
               ${shareActionHtml}
@@ -2020,7 +2030,12 @@
         }
 
         event.preventDefault();
-        window.location.reload();
+        const params = new URLSearchParams(window.location.search);
+        params.set("mode", PUZZLE_MODE_DAILY);
+        params.set("puzzle", makeDailyPuzzleId(getLocalDateKey()));
+
+        const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+        window.location.assign(nextUrl);
       });
 
       function getStoredThemePreference() {
