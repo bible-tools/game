@@ -264,8 +264,8 @@
         return `${year}-${month}-${day}`;
       }
 
-      function makeDailyPuzzleId(dateKey, translation) {
-        return `daily:${translation}:${dateKey}`;
+      function makeDailyPuzzleId(dateKey) {
+        return `daily:${dateKey}`;
       }
 
       function makeRandomPuzzleId(previousId = "") {
@@ -1052,7 +1052,7 @@
               nextPuzzleId = `legacy:${Math.abs(legacyHash)}`;
             } else {
               nextMode = PUZZLE_MODE_DAILY;
-              nextPuzzleId = makeDailyPuzzleId(localDateKey, this.state.translation);
+              nextPuzzleId = makeDailyPuzzleId(localDateKey);
             }
           }
 
@@ -1149,7 +1149,7 @@
           if (this.state.puzzleMode === PUZZLE_MODE_DAILY) {
             this.state.dailyDateKey = getLocalDateKey();
             this.setPuzzle(
-              makeDailyPuzzleId(this.state.dailyDateKey, this.state.translation),
+              makeDailyPuzzleId(this.state.dailyDateKey),
               PUZZLE_MODE_DAILY,
               { addHistoryEntry: true, pushUrl: true },
             );
@@ -1241,7 +1241,7 @@
           this.resetPlayState();
 
           this.setPuzzle(
-            makeDailyPuzzleId(localDateKey, this.state.translation),
+            makeDailyPuzzleId(localDateKey),
             PUZZLE_MODE_DAILY,
             { addHistoryEntry: true, pushUrl: true },
           );
@@ -1268,7 +1268,7 @@
           if (!this.state.puzzleId) {
             this.state.dailyDateKey = getLocalDateKey();
             this.setPuzzle(
-              makeDailyPuzzleId(this.state.dailyDateKey, this.state.translation),
+              makeDailyPuzzleId(this.state.dailyDateKey),
               PUZZLE_MODE_DAILY,
               { addHistoryEntry: true, pushUrl: false },
             );
@@ -1456,8 +1456,9 @@
         }
 
         getDefaultFilteredBooks(canonicalBooks) {
-          const filtered = canonicalBooks.filter((book) =>
-            COMMUNITY_DEFAULT_CANONICAL_BOOKS_SET.has(book),
+          const canonicalBookSet = new Set(canonicalBooks);
+          const filtered = COMMUNITY_DEFAULT_CANONICAL_BOOKS.filter((book) =>
+            canonicalBookSet.has(book),
           );
 
           return filtered.length > 0 ? filtered : canonicalBooks;
