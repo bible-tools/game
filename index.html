@@ -172,6 +172,7 @@
           >
           <a
             class="page__link page__title-link"
+            id="titleReloadLink"
             href="https://bible-tools.github.io/game/"
             >Bible Tools - Game</a
           >
@@ -208,6 +209,91 @@
 
     <script type="module">
       const API_ROOT = "https://bible-tools.github.io/data/translations";
+      const PUZZLE_MODE_DAILY = "daily";
+      const PUZZLE_MODE_RANDOM = "random";
+      const UINT32_MASK = 0xffffffff;
+
+      function hashStringToUint32(value) {
+        let hash = 0;
+
+        for (let i = 0; i < value.length; i++) {
+          hash = (hash << 5) - hash + value.charCodeAt(i);
+          hash |= 0;
+        }
+
+        return hash >>> 0;
+      }
+
+      function getLocalDateKey(date = new Date()) {
+        const year = String(date.getFullYear());
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day}`;
+      }
+
+      function makeDailyPuzzleId(dateKey, translation) {
+        return `daily:${translation}:${dateKey}`;
+      }
+
+      function makeRandomPuzzleId(previousId = "") {
+        const words = new Uint32Array(3);
+
+        if (globalThis.crypto?.getRandomValues) {
+          globalThis.crypto.getRandomValues(words);
+        } else {
+          words[0] = Math.floor(Math.random() * UINT32_MASK);
+          words[1] = Math.floor(Math.random() * UINT32_MASK);
+          words[2] = Date.now() & UINT32_MASK;
+        }
+
+        const now = Date.now().toString(36);
+        const entropy = Array.from(words, (word) => word.toString(36)).join("-");
+        let id = `random:${now}:${entropy}`;
+
+        if (id === previousId) {
+          id = `${id}:${Math.floor(Math.random() * 1_000_000).toString(36)}`;
+        }
+
+        return id;
+      }
+
+      function derivePuzzleSelection(reference, puzzleId, books) {
+        const canonicalBooks = Array.isArray(books) && books.length > 0
+          ? books
+          : Object.keys(reference?.books || {});
+
+        if (canonicalBooks.length === 0) {
+          throw new Error("Reference data does not contain any books");
+        }
+
+        const bookSeed = hashStringToUint32(`${puzzleId}|book`);
+        const book = canonicalBooks[bookSeed % canonicalBooks.length];
+        const chapterKeys = Object.keys(reference.books?.[book]?.chapters || {});
+
+        if (chapterKeys.length === 0) {
+          throw new Error(`Book has no chapters: ${book}`);
+        }
+
+        const chapterSeed = hashStringToUint32(`${puzzleId}|${book}|chapter`);
+        const chapterKey = chapterKeys[chapterSeed % chapterKeys.length];
+        const chapterData = reference.books[book].chapters[chapterKey];
+        const verseCount = Number(chapterData.verses) || 0;
+
+        if (verseCount <= 0) {
+          throw new Error(`Chapter has no verses: ${book} ${chapterKey}`);
+        }
+
+        const verseSeed = hashStringToUint32(`${puzzleId}|${book}|${chapterKey}|verse`);
+        const verseNum = (verseSeed % verseCount) + 1;
+
+        return {
+          book,
+          chapter: Number.parseInt(chapterKey, 10),
+          chapterKey,
+          verseNum,
+        };
+      }
 
       // Definitive translation options from https://bible-tools.github.io/app/dist/esm/BibleToolsPreferences.js.
       const preferences = {
@@ -441,37 +527,27 @@
         return `${API_ROOT}/${selected.language}/${selected.version}`;
       }
 
-      function resolveInitialTranslationVersion() {
-        const rawParam = new URLSearchParams(window.location.search).get(
-          "translation",
-        );
-
-        if (!rawParam) {
+      function resolveTranslationVersion(rawVersion) {
+        if (!rawVersion) {
           return preferences.defaultVersion;
         }
 
-        if (translationByVersion[rawParam]) {
-          return rawParam;
+        if (translationByVersion[rawVersion]) {
+          return rawVersion;
         }
 
-        const normalizedParam = rawParam.toLowerCase();
+        const normalizedVersion = rawVersion.toLowerCase();
         const matchedTranslation = preferences.translations.find(
-          (translation) => translation.version.toLowerCase() === normalizedParam,
+          (translation) => translation.version.toLowerCase() === normalizedVersion,
         );
 
         return matchedTranslation?.version || preferences.defaultVersion;
       }
 
-      function syncTranslationQueryParam(version) {
-        const selectedVersion = getSelectedTranslation(version).version;
-        const url = new URL(window.location.href);
+      function resolveInitialTranslationVersion() {
+        const rawParam = new URLSearchParams(window.location.search).get("translation");
 
-        if (url.searchParams.get("translation") === selectedVersion) {
-          return;
-        }
-
-        url.searchParams.set("translation", selectedVersion);
-        window.history.replaceState({}, "", url);
+        return resolveTranslationVersion(rawParam);
       }
 
       function populateTranslationSelect(selectedVersion) {
@@ -486,27 +562,6 @@
           .join("");
 
         select.value = getSelectedTranslation(selectedVersion).version;
-      }
-
-      // Deterministic hash-based day index
-      function getDayIndex(date) {
-        let hash = new URLSearchParams(window.location.search).get("hash");
-
-        if (hash !== null) {
-          const parsedHash = Number.parseInt(hash, 10);
-
-          if (Number.isFinite(parsedHash)) {
-            return Math.abs(parsedHash);
-          }
-        }
-
-        const dateStr = date.toISOString().split("T")[0];
-        for (let i = 0; i < dateStr.length; i++) {
-          hash = (hash << 5) - hash + dateStr.charCodeAt(i);
-          hash = hash & hash; // Convert to 32-bit integer
-        }
-
-        return Math.abs(hash);
       }
 
       // Letter evaluation
@@ -557,6 +612,11 @@
             localizedBookNames: [],
             bookNameMap: {},
             localizedBookNamesCache: {},
+            puzzleMode: PUZZLE_MODE_DAILY,
+            puzzleId: null,
+            puzzleHistory: [],
+            puzzleHistoryIndex: -1,
+            dailyDateKey: getLocalDateKey(),
             currentBook: null,
             currentBookDisplay: null,
             currentChapter: null,
@@ -574,12 +634,42 @@
             pendingGuessInput: "",
             today: new Date(),
           };
+
+          this.midnightTimerId = null;
+          this.onPopState = () => {
+            this.applyUrlState({ addHistoryEntry: false });
+            this.resetPlayState();
+            this.state.referenceCache = null;
+            this.state.canonicalBooks = [];
+            this.state.filteredCanonicalBooks = [];
+            this.state.localizedBookNames = [];
+            this.state.bookNameMap = {};
+            this.loadGame();
+          };
+          this.onVisibilityOrFocus = () => this.refreshDailyPuzzleIfNeeded();
         }
 
         connectedCallback() {
           this.render();
           this.setupEvents();
+          this.applyUrlState({ addHistoryEntry: true });
+          this.setupGlobalEvents();
+          this.scheduleDailyRolloverCheck();
           this.loadGame();
+        }
+
+        disconnectedCallback() {
+          if (this.midnightTimerId) {
+            clearTimeout(this.midnightTimerId);
+            this.midnightTimerId = null;
+          }
+
+          window.removeEventListener("popstate", this.onPopState);
+          window.removeEventListener("focus", this.onVisibilityOrFocus);
+          document.removeEventListener(
+            "visibilitychange",
+            this.onVisibilityOrFocus,
+          );
         }
 
         render() {
@@ -751,6 +841,16 @@
               background: var(--accent-hover);
             }
 
+            .game__button--secondary {
+              background: transparent;
+              border: 0.0625rem solid var(--accent);
+              color: var(--accent);
+            }
+
+            .game__button--secondary:hover {
+              background: rgba(76, 175, 80, 0.12);
+            }
+
             .game__button:disabled {
               cursor: not-allowed;
               opacity: 0.6;
@@ -863,33 +963,273 @@
         }
 
         setupEvents() {
-          const root = this.shadowRoot;
-
-          // Listen for translation changes
           document
             .getElementById("translation")
-            ?.addEventListener("change", (e) => {
-              const input = this.shadowRoot?.getElementById("guessInput");
+            ?.addEventListener("change", (e) =>
+              this.handleTranslationChange(e.target.value),
+            );
+        }
 
-              this.state.pendingGuessInput = input?.value?.trim() || "";
-              this.state.translation = e.target.value;
-              syncTranslationQueryParam(this.state.translation);
-              this.state.referenceCache = null;
-              this.state.canonicalBooks = [];
-              this.state.filteredCanonicalBooks = [];
-              this.state.localizedBookNames = [];
-              this.state.bookNameMap = {};
-              this.state.guesses = [];
-              this.state.attempts = 0;
-              this.state.solved = false;
-              this.state.gameOver = false;
-              this.state.suggestionList = [];
-              this.state.activeSuggestion = -1;
-              this.loadGame();
-            });
+        setupGlobalEvents() {
+          window.addEventListener("popstate", this.onPopState);
+          window.addEventListener("focus", this.onVisibilityOrFocus);
+          document.addEventListener("visibilitychange", this.onVisibilityOrFocus);
+        }
+
+        applyUrlState({ addHistoryEntry }) {
+          const params = new URLSearchParams(window.location.search);
+          const requestedTranslation = params.get("translation");
+
+          this.state.translation = resolveTranslationVersion(requestedTranslation);
+
+          const translationSelect = document.getElementById("translation");
+          if (translationSelect) {
+            translationSelect.value = this.state.translation;
+          }
+
+          const requestedMode = params.get("mode");
+          const puzzleMode =
+            requestedMode === PUZZLE_MODE_RANDOM
+              ? PUZZLE_MODE_RANDOM
+              : PUZZLE_MODE_DAILY;
+          const requestedPuzzleId = params.get("puzzle");
+          const legacyHashParam = params.get("hash");
+          const legacyHash = Number.parseInt(legacyHashParam ?? "", 10);
+          const localDateKey = getLocalDateKey();
+
+          this.state.dailyDateKey = localDateKey;
+
+          let nextMode = puzzleMode;
+          let nextPuzzleId = requestedPuzzleId;
+
+          if (!nextPuzzleId) {
+            if (Number.isFinite(legacyHash)) {
+              nextMode = PUZZLE_MODE_RANDOM;
+              nextPuzzleId = `legacy:${Math.abs(legacyHash)}`;
+            } else {
+              nextMode = PUZZLE_MODE_DAILY;
+              nextPuzzleId = makeDailyPuzzleId(localDateKey, this.state.translation);
+            }
+          }
+
+          this.setPuzzle(nextPuzzleId, nextMode, {
+            addHistoryEntry,
+            pushUrl: false,
+            replaceCurrentHistoryEntry: !addHistoryEntry,
+          });
+          this.updateUrlState({ push: false });
+        }
+
+        updateUrlState({ push }) {
+          const params = new URLSearchParams(window.location.search);
+          params.set("mode", this.state.puzzleMode);
+          params.set("puzzle", this.state.puzzleId);
+          params.set("translation", this.state.translation);
+
+          const nextQuery = params.toString();
+          const nextUrl = `${window.location.pathname}?${nextQuery}${window.location.hash}`;
+
+          if (push) {
+            window.history.pushState(null, "", nextUrl);
+          } else {
+            window.history.replaceState(null, "", nextUrl);
+          }
+        }
+
+        setPuzzle(
+          puzzleId,
+          puzzleMode,
+          { addHistoryEntry, pushUrl, replaceCurrentHistoryEntry = false },
+        ) {
+          this.state.puzzleId = puzzleId;
+          this.state.puzzleMode = puzzleMode;
+
+          if (addHistoryEntry) {
+            this.pushPuzzleHistoryEntry(
+              {
+                translation: this.state.translation,
+                puzzleMode: this.state.puzzleMode,
+                puzzleId: this.state.puzzleId,
+              },
+              replaceCurrentHistoryEntry,
+            );
+          }
+
+          if (typeof pushUrl === "boolean") {
+            this.updateUrlState({ push: pushUrl });
+          }
+        }
+
+        pushPuzzleHistoryEntry(entry, replaceCurrentHistoryEntry = false) {
+          if (
+            replaceCurrentHistoryEntry &&
+            this.state.puzzleHistoryIndex >= 0 &&
+            this.state.puzzleHistoryIndex < this.state.puzzleHistory.length
+          ) {
+            this.state.puzzleHistory[this.state.puzzleHistoryIndex] = entry;
+
+            return;
+          }
+
+          const nextIndex = this.state.puzzleHistoryIndex + 1;
+
+          this.state.puzzleHistory = this.state.puzzleHistory.slice(0, nextIndex);
+          this.state.puzzleHistory.push(entry);
+          this.state.puzzleHistoryIndex = this.state.puzzleHistory.length - 1;
+        }
+
+        resetPlayState() {
+          this.state.guesses = [];
+          this.state.attempts = 0;
+          this.state.solved = false;
+          this.state.gameOver = false;
+          this.state.suggestionList = [];
+          this.state.activeSuggestion = -1;
+          this.state.animateLastRow = false;
+        }
+
+        handleTranslationChange(nextTranslation) {
+          if (!translationByVersion[nextTranslation]) return;
+
+          const input = this.shadowRoot?.getElementById("guessInput");
+
+          this.state.pendingGuessInput = input?.value?.trim() || "";
+          this.state.translation = nextTranslation;
+          this.state.referenceCache = null;
+          this.state.canonicalBooks = [];
+          this.state.filteredCanonicalBooks = [];
+          this.state.localizedBookNames = [];
+          this.state.bookNameMap = {};
+          this.resetPlayState();
+
+          if (this.state.puzzleMode === PUZZLE_MODE_DAILY) {
+            this.state.dailyDateKey = getLocalDateKey();
+            this.setPuzzle(
+              makeDailyPuzzleId(this.state.dailyDateKey, this.state.translation),
+              PUZZLE_MODE_DAILY,
+              { addHistoryEntry: true, pushUrl: true },
+            );
+          } else {
+            this.setPuzzle(
+              this.state.puzzleId || makeRandomPuzzleId(),
+              PUZZLE_MODE_RANDOM,
+              {
+                addHistoryEntry: true,
+                pushUrl: true,
+              },
+            );
+          }
+
+          this.loadGame();
+        }
+
+        resetCurrentGame() {
+          this.state.pendingGuessInput = "";
+          this.resetPlayState();
+          this.updateUI();
+        }
+
+        startRandomGame() {
+          this.state.pendingGuessInput = "";
+          this.resetPlayState();
+
+          let nextPuzzleId = makeRandomPuzzleId(this.state.puzzleId || "");
+
+          for (let i = 0; i < 5 && nextPuzzleId === this.state.puzzleId; i++) {
+            nextPuzzleId = makeRandomPuzzleId(this.state.puzzleId || "");
+          }
+
+          this.setPuzzle(nextPuzzleId, PUZZLE_MODE_RANDOM, {
+            addHistoryEntry: true,
+            pushUrl: true,
+          });
+
+          this.loadGame();
+        }
+
+        goToPuzzleHistory(direction) {
+          const nextIndex = this.state.puzzleHistoryIndex + direction;
+
+          if (nextIndex < 0 || nextIndex >= this.state.puzzleHistory.length) {
+            return;
+          }
+
+          const entry = this.state.puzzleHistory[nextIndex];
+          const translationChanged = entry.translation !== this.state.translation;
+
+          this.state.puzzleHistoryIndex = nextIndex;
+          this.state.puzzleId = entry.puzzleId;
+          this.state.puzzleMode = entry.puzzleMode;
+          this.state.translation = entry.translation;
+
+          if (translationChanged) {
+            this.state.referenceCache = null;
+            this.state.canonicalBooks = [];
+            this.state.filteredCanonicalBooks = [];
+            this.state.localizedBookNames = [];
+            this.state.bookNameMap = {};
+
+            const translationSelect = document.getElementById("translation");
+            if (translationSelect) {
+              translationSelect.value = this.state.translation;
+            }
+          }
+
+          this.state.pendingGuessInput = "";
+          this.resetPlayState();
+          this.updateUrlState({ push: false });
+          this.loadGame();
+        }
+
+        refreshDailyPuzzleIfNeeded() {
+          if (this.state.puzzleMode !== PUZZLE_MODE_DAILY) {
+            return;
+          }
+
+          const localDateKey = getLocalDateKey();
+
+          if (localDateKey === this.state.dailyDateKey) {
+            return;
+          }
+
+          this.state.dailyDateKey = localDateKey;
+          this.state.pendingGuessInput = "";
+          this.resetPlayState();
+
+          this.setPuzzle(
+            makeDailyPuzzleId(localDateKey, this.state.translation),
+            PUZZLE_MODE_DAILY,
+            { addHistoryEntry: true, pushUrl: true },
+          );
+
+          this.loadGame();
+        }
+
+        scheduleDailyRolloverCheck() {
+          if (this.midnightTimerId) {
+            clearTimeout(this.midnightTimerId);
+          }
+
+          const now = new Date();
+          const nextMidnight = new Date(now);
+          nextMidnight.setHours(24, 0, 0, 50);
+
+          this.midnightTimerId = setTimeout(() => {
+            this.refreshDailyPuzzleIfNeeded();
+            this.scheduleDailyRolloverCheck();
+          }, nextMidnight.getTime() - now.getTime());
         }
 
         async loadGame() {
+          if (!this.state.puzzleId) {
+            this.state.dailyDateKey = getLocalDateKey();
+            this.setPuzzle(
+              makeDailyPuzzleId(this.state.dailyDateKey, this.state.translation),
+              PUZZLE_MODE_DAILY,
+              { addHistoryEntry: true, pushUrl: false },
+            );
+          }
+
           this.state.loading = true;
           this.state.error = null;
           this.updateUI();
@@ -916,28 +1256,24 @@
               (book) => this.state.bookNameMap[book] || book,
             );
 
-            // Get deterministic daily book and chapter
-            const dayIdx = getDayIndex(this.state.today);
-            const bookIdx = dayIdx % this.state.filteredCanonicalBooks.length;
-            const book = this.state.filteredCanonicalBooks[bookIdx];
-            const bookData = reference.books[book];
-
-            const chapterKeys = Object.keys(bookData.chapters);
-            const chapterIdx = (dayIdx + bookIdx) % chapterKeys.length;
-            const chapter = chapterKeys[chapterIdx];
-            const chapterData = bookData.chapters[chapter];
-
-            // Pick a verse deterministically
-            const verseCount = chapterData.verses;
-            const verseNum = ((dayIdx + bookIdx + chapterIdx) % verseCount) + 1;
+            const selection = derivePuzzleSelection(
+              reference,
+              this.state.puzzleId,
+              this.state.filteredCanonicalBooks,
+            );
 
             // Fetch the verse
-            const verseData = await this.fetchVerse(book, chapter, verseNum);
+            const verseData = await this.fetchVerse(
+              selection.book,
+              selection.chapterKey,
+              selection.verseNum,
+            );
 
-            this.state.currentBook = book;
-            this.state.currentBookDisplay = this.state.bookNameMap[book] || book;
-            this.state.currentChapter = parseInt(chapter, 10);
-            this.state.currentVerseNum = verseNum;
+            this.state.currentBook = selection.book;
+            this.state.currentBookDisplay =
+              this.state.bookNameMap[selection.book] || selection.book;
+            this.state.currentChapter = selection.chapter;
+            this.state.currentVerseNum = selection.verseNum;
             this.state.verseText = verseData.text;
             this.state.loading = false;
 
@@ -1016,10 +1352,14 @@
           try {
             const res = await fetch(`${baseUrl}/index.json`);
             if (!res.ok) {
-              this.state.localizedBookNamesCache[this.state.translation] =
-                staticMap.length > 0 ? staticMap : fallbackMap;
+              const partialStaticMap = Object.keys(staticMap).length > 0
+                ? staticMap
+                : fallbackMap;
 
-              return staticMap.length > 0 ? staticMap : fallbackMap;
+              this.state.localizedBookNamesCache[this.state.translation] =
+                partialStaticMap;
+
+              return partialStaticMap;
             }
 
             const translationIndex = await res.json();
@@ -1028,10 +1368,14 @@
               : [];
 
             if (indexBooks.length === 0) {
-              this.state.localizedBookNamesCache[this.state.translation] =
-                staticMap.length > 0 ? staticMap : fallbackMap;
+              const partialStaticMap = Object.keys(staticMap).length > 0
+                ? staticMap
+                : fallbackMap;
 
-              return staticMap.length > 0 ? staticMap : fallbackMap;
+              this.state.localizedBookNamesCache[this.state.translation] =
+                partialStaticMap;
+
+              return partialStaticMap;
             }
 
             const bookNameMap = {};
@@ -1052,10 +1396,14 @@
           } catch (error) {
             console.warn("Failed to load localized book names", error);
 
-            this.state.localizedBookNamesCache[this.state.translation] =
-              staticMap.length > 0 ? staticMap : fallbackMap;
+            const partialStaticMap = Object.keys(staticMap).length > 0
+              ? staticMap
+              : fallbackMap;
 
-            return staticMap.length > 0 ? staticMap : fallbackMap;
+            this.state.localizedBookNamesCache[this.state.translation] =
+              partialStaticMap;
+
+            return partialStaticMap;
           }
         }
 
@@ -1091,7 +1439,7 @@
           let html = `
             <div class="game__verse-card">
               <div class="game__verse-text">"${this.escapeHtml(this.state.verseText)}"</div>
-              <div class="game__verse-ref">${this.state.translation} • ${this.state.currentChapter}:${this.state.currentVerseNum}</div>
+              <div class="game__verse-ref">${this.state.translation} • ${this.state.currentChapter}:${this.state.currentVerseNum} • ${this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random"}</div>
             </div>
 
             <div class="game__section">
@@ -1140,12 +1488,21 @@
         }
 
         renderGuessInput() {
+          const hasPrevious = this.state.puzzleHistoryIndex > 0;
+          const hasNext =
+            this.state.puzzleHistoryIndex < this.state.puzzleHistory.length - 1;
+
+          const actionsHtml = `
+            <div class="game__input-group game__input-group--actions">
+              <button class="game__button game__button--secondary" id="resetBtn">Reset</button>
+              <button class="game__button" id="newGameBtn">New Game</button>
+              <button class="game__button game__button--secondary" id="prevPuzzleBtn" ${hasPrevious ? "" : "disabled"}>Previous</button>
+              <button class="game__button game__button--secondary" id="nextPuzzleBtn" ${hasNext ? "" : "disabled"}>Next</button>
+            </div>
+          `;
+
           if (this.state.gameOver) {
-            return `
-              <div class="game__input-group game__input-group--actions">
-                <button class="game__button game__button--new-game" onclick="document.getElementById('game').newGame()">New Game</button>
-              </div>
-            `;
+            return actionsHtml;
           }
 
           return `
@@ -1165,6 +1522,7 @@
               </div>
               <ul class="game__suggestions" id="suggestionsList" role="listbox" aria-label="Book name suggestions"></ul>
             </div>
+            ${actionsHtml}
           `;
         }
 
@@ -1183,6 +1541,10 @@
           const input = this.shadowRoot.getElementById("guessInput");
           const submitBtn = this.shadowRoot.getElementById("submitBtn");
           const feedback = this.shadowRoot.getElementById("feedback");
+          const resetBtn = this.shadowRoot.getElementById("resetBtn");
+          const newGameBtn = this.shadowRoot.getElementById("newGameBtn");
+          const prevPuzzleBtn = this.shadowRoot.getElementById("prevPuzzleBtn");
+          const nextPuzzleBtn = this.shadowRoot.getElementById("nextPuzzleBtn");
 
           if (input) {
             input.focus();
@@ -1203,6 +1565,22 @@
               this.clearSuggestions();
               this.handleGuess(input, feedback);
             });
+          }
+
+          if (resetBtn) {
+            resetBtn.addEventListener("click", () => this.resetCurrentGame());
+          }
+
+          if (newGameBtn) {
+            newGameBtn.addEventListener("click", () => this.startRandomGame());
+          }
+
+          if (prevPuzzleBtn) {
+            prevPuzzleBtn.addEventListener("click", () => this.goToPuzzleHistory(-1));
+          }
+
+          if (nextPuzzleBtn) {
+            nextPuzzleBtn.addEventListener("click", () => this.goToPuzzleHistory(1));
           }
 
           const wrapper = this.shadowRoot.getElementById("autocompleteWrapper");
@@ -1244,7 +1622,7 @@
           }));
 
           // Indicate the answer continues beyond what was typed
-          if (!isCorrect && guess.length < this.state.currentBook.length) {
+          if (!isCorrect && guess.length < targetDisplay.length) {
             guessRow.push({ letter: "+", status: "more" });
           }
 
@@ -1279,15 +1657,7 @@
         }
 
         newGame() {
-          this.state.guesses = [];
-          this.state.attempts = 0;
-          this.state.solved = false;
-          this.state.gameOver = false;
-          this.state.currentBookDisplay = null;
-          this.state.suggestionList = [];
-          this.state.activeSuggestion = -1;
-
-          this.loadGame();
+          this.startRandomGame();
         }
 
         escapeHtml(text) {
@@ -1436,7 +1806,21 @@
       // Theme toggle
       const THEME_STORAGE_KEY = "bible-tools-game-theme";
       const themeToggle = document.getElementById("themeToggle");
+      const titleReloadLink = document.getElementById("titleReloadLink");
       const html = document.documentElement;
+
+      titleReloadLink?.addEventListener("click", (event) => {
+        if (event.defaultPrevented || event.button !== 0) {
+          return;
+        }
+
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+          return;
+        }
+
+        event.preventDefault();
+        window.location.reload();
+      });
 
       function getStoredThemePreference() {
         const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
