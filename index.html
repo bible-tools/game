@@ -265,6 +265,169 @@
         ]),
       );
 
+      // Static mapping of canonical book names across all translations (1-66 Protestant canon)
+      // Keyed by language code, arrays are 1-indexed (position 0 is book 1)
+      const CANONICAL_BOOK_NAMES = Object.freeze({
+        en: [
+          "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
+          "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
+          "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
+          "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
+          "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations",
+          "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
+          "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
+          "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew",
+          "Mark", "Luke", "John", "Acts", "Romans",
+          "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians",
+          "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy",
+          "Titus", "Philemon", "Hebrews", "James", "1 Peter",
+          "2 Peter", "1 John", "2 John", "3 John", "Jude",
+          "Revelation of John"
+        ],
+        es: [
+          "Génesis", "Éxodo", "Levítico", "Números", "Deuteronomio",
+          "Josué", "Jueces", "Rut", "1 Samuel", "2 Samuel",
+          "1 Reyes", "2 Reyes", "1 Crónicas", "2 Crónicas", "Esdras",
+          "Nehemías", "Ester", "Job", "Salmos", "Proverbios",
+          "Eclesiastés", "Cantares", "Isaías", "Jeremías", "Lamentaciones",
+          "Ezequiel", "Daniel", "Oseas", "Joel", "Amós",
+          "Abdías", "Jonás", "Miqueas", "Nahúm", "Habacuc",
+          "Sofonías", "Hageo", "Zacarías", "Malaquías", "Mateo",
+          "Marcos", "Lucas", "Juan", "Hechos", "Romanos",
+          "1 Corintios", "2 Corintios", "Gálatas", "Efesios", "Filipenses",
+          "Colosenses", "1 Tesalonicenses", "2 Tesalonicenses", "1 Timoteo", "2 Timoteo",
+          "Tito", "Filemón", "Hebreos", "Santiago", "1 Pedro",
+          "2 Pedro", "1 Juan", "2 Juan", "3 Juan", "Judas",
+          "Apocalipsis"
+        ],
+        fr: [
+          "Genèse", "Exode", "Lévitique", "Nombres", "Deutéronome",
+          "Josué", "Juges", "Ruth", "1 Samuel", "2 Samuel",
+          "1 Rois", "2 Rois", "1 Chroniques", "2 Chroniques", "Esdras",
+          "Néhémie", "Esther", "Job", "Psaumes", "Proverbes",
+          "Ecclésiaste", "Cantique des cantiques", "Ésaïe", "Jérémie", "Lamentations",
+          "Ézéchiel", "Daniel", "Osée", "Joël", "Amos",
+          "Abdias", "Jonas", "Michée", "Nahum", "Habakuk",
+          "Sophonie", "Aggée", "Zacharie", "Malachie", "Matthieu",
+          "Marc", "Luc", "Jean", "Actes", "Romains",
+          "1 Corinthiens", "2 Corinthiens", "Galates", "Éphésiens", "Philippiens",
+          "Colossiens", "1 Thessaloniciens", "2 Thessaloniciens", "1 Timothée", "2 Timothée",
+          "Tite", "Philémon", "Hébreux", "Jacques", "1 Pierre",
+          "2 Pierre", "1 Jean", "2 Jean", "3 Jean", "Jude",
+          "Apocalypse"
+        ],
+        de: [
+          "1. Mose", "2. Mose", "3. Mose", "4. Mose", "5. Mose",
+          "Josua", "Richter", "Rut", "1. Samuel", "2. Samuel",
+          "1. Könige", "2. Könige", "1. Chronik", "2. Chronik", "Esra",
+          "Nehemia", "Ester", "Hiob", "Psalmen", "Sprichwörter",
+          "Prediger", "Hoheslied", "Jesaja", "Jeremia", "Klagelieder",
+          "Hesekiel", "Daniel", "Hosea", "Joel", "Amos",
+          "Obadja", "Jona", "Micha", "Nahum", "Habakuk",
+          "Zephanja", "Haggai", "Sacharja", "Maleachi", "Matthäus",
+          "Markus", "Lukas", "Johannes", "Apostelgeschichte", "Römer",
+          "1. Korinther", "2. Korinther", "Galater", "Epheser", "Philipper",
+          "Kolosser", "1. Thessalonicher", "2. Thessalonicher", "1. Timotheus", "2. Timotheus",
+          "Titus", "Philemon", "Hebräer", "Jakobus", "1. Petrus",
+          "2. Petrus", "1. Johannes", "2. Johannes", "3. Johannes", "Judas",
+          "Offenbarung"
+        ],
+        ar: [
+          "التكوين", "الخروج", "اللاويين", "العدد", "التثنية",
+          "يشوع", "القضاة", "راعوث", "صموئيل الأول", "صموئيل الثاني",
+          "الملوك الأول", "الملوك الثاني", "أخبار الأيام الأول", "أخبار الأيام الثاني", "عزرا",
+          "نحميا", "استير", "أيوب", "المزامير", "الأمثال",
+          "الجامعة", "نشيد الأنشاد", "إشعياء", "إرميا", "المراثي",
+          "حزقيال", "دانيال", "هوشع", "يوئيل", "عاموس",
+          "عوبديا", "يونان", "ميخا", "ناحوم", "حبقوق",
+          "صفنيا", "حجي", "زكريا", "ملاخي", "متى",
+          "مرقس", "لوقا", "يوحنا", "الأعمال", "رومية",
+          "1 كورنثوس", "2 كورنثوس", "غلاطية", "أفسس", "فيليبي",
+          "كولوسي", "1 تسالونيكي", "2 تسالونيكي", "1 تيموثاوس", "2 تيموثاوس",
+          "تيطس", "فيليمون", "العبرانيين", "يعقوب", "1 بطرس",
+          "2 بطرس", "1 يوحنا", "2 يوحنا", "3 يوحنا", "يهوذا",
+          "الرؤيا"
+        ]
+      });
+
+      function getCanonicalBookNameByIndex(bookIndex, languageCode) {
+        const books = CANONICAL_BOOK_NAMES[languageCode] || CANONICAL_BOOK_NAMES.en;
+        return books[bookIndex - 1] || null; // bookIndex is 1-based
+      }
+
+      const COMMUNITY_DEFAULT_CANONICAL_BOOKS = Object.freeze([
+        "Genesis",
+        "Exodus",
+        "Leviticus",
+        "Numbers",
+        "Deuteronomy",
+        "Joshua",
+        "Judges",
+        "Ruth",
+        "1 Samuel",
+        "2 Samuel",
+        "1 Kings",
+        "2 Kings",
+        "1 Chronicles",
+        "2 Chronicles",
+        "Ezra",
+        "Nehemiah",
+        "Esther",
+        "Job",
+        "Psalms",
+        "Proverbs",
+        "Ecclesiastes",
+        "Song of Solomon",
+        "Isaiah",
+        "Jeremiah",
+        "Lamentations",
+        "Ezekiel",
+        "Daniel",
+        "Hosea",
+        "Joel",
+        "Amos",
+        "Obadiah",
+        "Jonah",
+        "Micah",
+        "Nahum",
+        "Habakkuk",
+        "Zephaniah",
+        "Haggai",
+        "Zechariah",
+        "Malachi",
+        "Matthew",
+        "Mark",
+        "Luke",
+        "John",
+        "Acts",
+        "Romans",
+        "1 Corinthians",
+        "2 Corinthians",
+        "Galatians",
+        "Ephesians",
+        "Philippians",
+        "Colossians",
+        "1 Thessalonians",
+        "2 Thessalonians",
+        "1 Timothy",
+        "2 Timothy",
+        "Titus",
+        "Philemon",
+        "Hebrews",
+        "James",
+        "1 Peter",
+        "2 Peter",
+        "1 John",
+        "2 John",
+        "3 John",
+        "Jude",
+        "Revelation of John",
+      ]);
+
+      const COMMUNITY_DEFAULT_CANONICAL_BOOKS_SET = new Set(
+        COMMUNITY_DEFAULT_CANONICAL_BOOKS,
+      );
+
       function getSelectedTranslation(version) {
         return (
           translationByVersion[version] ||
@@ -278,7 +441,40 @@
         return `${API_ROOT}/${selected.language}/${selected.version}`;
       }
 
-      function populateTranslationSelect() {
+      function resolveInitialTranslationVersion() {
+        const rawParam = new URLSearchParams(window.location.search).get(
+          "translation",
+        );
+
+        if (!rawParam) {
+          return preferences.defaultVersion;
+        }
+
+        if (translationByVersion[rawParam]) {
+          return rawParam;
+        }
+
+        const normalizedParam = rawParam.toLowerCase();
+        const matchedTranslation = preferences.translations.find(
+          (translation) => translation.version.toLowerCase() === normalizedParam,
+        );
+
+        return matchedTranslation?.version || preferences.defaultVersion;
+      }
+
+      function syncTranslationQueryParam(version) {
+        const selectedVersion = getSelectedTranslation(version).version;
+        const url = new URL(window.location.href);
+
+        if (url.searchParams.get("translation") === selectedVersion) {
+          return;
+        }
+
+        url.searchParams.set("translation", selectedVersion);
+        window.history.replaceState({}, "", url);
+      }
+
+      function populateTranslationSelect(selectedVersion) {
         const select = document.getElementById("translation");
         if (!select) return;
 
@@ -289,7 +485,7 @@
           )
           .join("");
 
-        select.value = preferences.defaultVersion;
+        select.value = getSelectedTranslation(selectedVersion).version;
       }
 
       // Deterministic hash-based day index
@@ -351,11 +547,18 @@
 
           this.attachShadow({ mode: "open" });
 
+          const initialTranslation = resolveInitialTranslationVersion();
+
           this.state = {
-            translation: preferences.defaultVersion,
+            translation: initialTranslation,
             referenceCache: null,
             canonicalBooks: [],
+            filteredCanonicalBooks: [],
+            localizedBookNames: [],
+            bookNameMap: {},
+            localizedBookNamesCache: {},
             currentBook: null,
+            currentBookDisplay: null,
             currentChapter: null,
             currentVerseNum: null,
             verseText: null,
@@ -368,6 +571,7 @@
             animateLastRow: false,
             suggestionList: [],
             activeSuggestion: -1,
+            pendingGuessInput: "",
             today: new Date(),
           };
         }
@@ -665,9 +869,16 @@
           document
             .getElementById("translation")
             ?.addEventListener("change", (e) => {
+              const input = this.shadowRoot?.getElementById("guessInput");
+
+              this.state.pendingGuessInput = input?.value?.trim() || "";
               this.state.translation = e.target.value;
+              syncTranslationQueryParam(this.state.translation);
               this.state.referenceCache = null;
               this.state.canonicalBooks = [];
+              this.state.filteredCanonicalBooks = [];
+              this.state.localizedBookNames = [];
+              this.state.bookNameMap = {};
               this.state.guesses = [];
               this.state.attempts = 0;
               this.state.solved = false;
@@ -692,10 +903,23 @@
               this.state.canonicalBooks = Object.keys(reference.books);
             }
 
+            this.state.bookNameMap = await this.getBookNameMap(reference);
+            this.state.filteredCanonicalBooks = this.getDefaultFilteredBooks(
+              this.state.canonicalBooks,
+            );
+
+            if (this.state.filteredCanonicalBooks.length === 0) {
+              throw new Error("No books available after applying default filter");
+            }
+
+            this.state.localizedBookNames = this.state.filteredCanonicalBooks.map(
+              (book) => this.state.bookNameMap[book] || book,
+            );
+
             // Get deterministic daily book and chapter
             const dayIdx = getDayIndex(this.state.today);
-            const bookIdx = dayIdx % this.state.canonicalBooks.length;
-            const book = this.state.canonicalBooks[bookIdx];
+            const bookIdx = dayIdx % this.state.filteredCanonicalBooks.length;
+            const book = this.state.filteredCanonicalBooks[bookIdx];
             const bookData = reference.books[book];
 
             const chapterKeys = Object.keys(bookData.chapters);
@@ -711,6 +935,7 @@
             const verseData = await this.fetchVerse(book, chapter, verseNum);
 
             this.state.currentBook = book;
+            this.state.currentBookDisplay = this.state.bookNameMap[book] || book;
             this.state.currentChapter = parseInt(chapter, 10);
             this.state.currentVerseNum = verseNum;
             this.state.verseText = verseData.text;
@@ -749,6 +974,101 @@
           if (!res.ok) throw new Error(`Verse not found: ${url}`);
 
           return res.json();
+        }
+
+        async getBookNameMap(reference) {
+          const cached = this.state.localizedBookNamesCache[this.state.translation];
+          if (cached) {
+            return cached;
+          }
+
+          const languageCode = this.getCurrentLanguageCode();
+          const canonicalBooks = Object.keys(reference.books);
+
+          // First, build from static canonical book names
+          const staticMap = {};
+          let builtFromStatic = true;
+
+          for (let i = 0; i < canonicalBooks.length; i++) {
+            const book = canonicalBooks[i];
+            const localized = getCanonicalBookNameByIndex(i + 1, languageCode);
+
+            if (localized) {
+              staticMap[book] = localized;
+            } else {
+              builtFromStatic = false;
+              break;
+            }
+          }
+
+          // If static map was complete, cache and return it
+          if (builtFromStatic && Object.keys(staticMap).length === canonicalBooks.length) {
+            this.state.localizedBookNamesCache[this.state.translation] = staticMap;
+            return staticMap;
+          }
+
+          // Fallback: try to fetch from API
+          const fallbackMap = Object.fromEntries(
+            canonicalBooks.map((book) => [book, book]),
+          );
+          const baseUrl = getTranslationBaseUrl(this.state.translation);
+
+          try {
+            const res = await fetch(`${baseUrl}/index.json`);
+            if (!res.ok) {
+              this.state.localizedBookNamesCache[this.state.translation] =
+                staticMap.length > 0 ? staticMap : fallbackMap;
+
+              return staticMap.length > 0 ? staticMap : fallbackMap;
+            }
+
+            const translationIndex = await res.json();
+            const indexBooks = Array.isArray(translationIndex.books)
+              ? translationIndex.books
+              : [];
+
+            if (indexBooks.length === 0) {
+              this.state.localizedBookNamesCache[this.state.translation] =
+                staticMap.length > 0 ? staticMap : fallbackMap;
+
+              return staticMap.length > 0 ? staticMap : fallbackMap;
+            }
+
+            const bookNameMap = {};
+            for (let i = 0; i < canonicalBooks.length; i++) {
+              const book = canonicalBooks[i];
+              const localizedName = indexBooks[i]?.name;
+
+              bookNameMap[book] =
+                typeof localizedName === "string" && localizedName.trim()
+                  ? localizedName
+                  : staticMap[book] || book;
+            }
+
+            this.state.localizedBookNamesCache[this.state.translation] =
+              bookNameMap;
+
+            return bookNameMap;
+          } catch (error) {
+            console.warn("Failed to load localized book names", error);
+
+            this.state.localizedBookNamesCache[this.state.translation] =
+              staticMap.length > 0 ? staticMap : fallbackMap;
+
+            return staticMap.length > 0 ? staticMap : fallbackMap;
+          }
+        }
+
+        getCurrentLanguageCode() {
+          return getSelectedTranslation(this.state.translation).language;
+        }
+
+        getDefaultFilteredBooks(canonicalBooks) {
+          const filtered = canonicalBooks.filter((book) =>
+            COMMUNITY_DEFAULT_CANONICAL_BOOKS_SET.has(book),
+          );
+
+          return filtered.length > 0 ? filtered : canonicalBooks;
         }
 
         updateUI() {
@@ -853,7 +1173,7 @@
 
           return `
             <div class="game__answer-reveal game__answer-reveal--show">
-              <strong class="game__answer-label">Answer:</strong> ${this.escapeHtml(this.state.currentBook)}
+              <strong class="game__answer-label">Answer:</strong> ${this.escapeHtml(this.state.currentBookDisplay || this.state.currentBook)}
               ${this.state.currentChapter}:${this.state.currentVerseNum}
             </div>
           `;
@@ -870,6 +1190,12 @@
             input.addEventListener("keydown", (e) =>
               this.handleInputKeydown(e, input, feedback),
             );
+
+            if (this.state.pendingGuessInput) {
+              input.value = this.state.pendingGuessInput;
+              this.state.pendingGuessInput = "";
+              this.handleInput(input);
+            }
           }
 
           if (submitBtn) {
@@ -903,9 +1229,13 @@
             return;
           }
 
+          const guessNorm = this.normalizeForMatch(guess);
+          const targetDisplay = this.state.currentBookDisplay || this.state.currentBook;
+          const targetDisplayNorm = this.normalizeForMatch(targetDisplay);
+          const targetCanonicalNorm = this.normalizeForMatch(this.state.currentBook);
           const isCorrect =
-            guess.toLowerCase() === this.state.currentBook.toLowerCase();
-          const evaluation = evaluateGuess(guess, this.state.currentBook);
+            guessNorm === targetDisplayNorm || guessNorm === targetCanonicalNorm;
+          const evaluation = evaluateGuess(guess, targetDisplay);
 
           // Store guess
           const guessRow = evaluation.map((status, i) => ({
@@ -926,13 +1256,13 @@
             this.state.solved = true;
             this.state.gameOver = true;
 
-            feedbackEl.textContent = `🎉 Correct! The book is ${this.state.currentBook}.`;
+            feedbackEl.textContent = `🎉 Correct! The book is ${targetDisplay}.`;
             feedbackEl.className =
               "game__feedback game__feedback--show game__feedback--correct";
           } else if (this.state.attempts >= 6) {
             this.state.gameOver = true;
 
-            feedbackEl.textContent = `Game Over! The answer was ${this.state.currentBook}.`;
+            feedbackEl.textContent = `Game Over! The answer was ${targetDisplay}.`;
             feedbackEl.className =
               "game__feedback game__feedback--show game__feedback--incorrect";
           } else {
@@ -953,6 +1283,7 @@
           this.state.attempts = 0;
           this.state.solved = false;
           this.state.gameOver = false;
+          this.state.currentBookDisplay = null;
           this.state.suggestionList = [];
           this.state.activeSuggestion = -1;
 
@@ -966,28 +1297,55 @@
           return div.innerHTML;
         }
 
+        normalizeForMatch(text) {
+          return text
+            .trim()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/\p{Diacritic}/gu, "");
+        }
+
         handleInput(input) {
           if (this.state.gameOver) {
             this.clearSuggestions();
             return;
           }
 
-          const query = input.value.trim().toLowerCase();
-          if (!query) {
+          const rawValue = input.value;
+          const query = this.normalizeForMatch(rawValue);
+          if (!rawValue) {
             this.clearSuggestions();
             return;
           }
 
-          const books = this.state.canonicalBooks;
-          const prefix = books.filter((b) => b.toLowerCase().startsWith(query));
+          const books =
+            this.state.localizedBookNames.length > 0
+              ? this.state.localizedBookNames
+              : this.state.canonicalBooks;
+          if (query.length === 0) {
+            // If only whitespace was entered, show the full canonical list so
+            // users can browse without typing in the translation's script.
+            this.state.suggestionList = books;
+            this.state.activeSuggestion = -1;
+            this.renderSuggestionItems(input);
+            return;
+          }
+
+          const prefix = books.filter((b) =>
+            this.normalizeForMatch(b).startsWith(query),
+          );
           const substring = books.filter(
             (b) =>
-              !b.toLowerCase().startsWith(query) &&
-              b.toLowerCase().includes(query),
+              !this.normalizeForMatch(b).startsWith(query) &&
+              this.normalizeForMatch(b).includes(query),
           );
-          const results = [...prefix, ...substring].slice(0, 8);
+          const results = [...prefix, ...substring];
 
-          this.state.suggestionList = results;
+          // If there are no matches (for example Latin letters while using an
+          // Arabic translation), fall back to the full canonical order list.
+          const suggestionList = results.length > 0 ? results : books;
+
+          this.state.suggestionList = suggestionList;
           this.state.activeSuggestion = -1;
           this.renderSuggestionItems(input);
         }
@@ -1071,35 +1429,45 @@
         }
       }
 
-      populateTranslationSelect();
+      populateTranslationSelect(resolveInitialTranslationVersion());
 
       customElements.define("bible-tools-game", BibleToolsGame);
 
       // Theme toggle
+      const THEME_STORAGE_KEY = "bible-tools-game-theme";
       const themeToggle = document.getElementById("themeToggle");
       const html = document.documentElement;
 
-      if (localStorage.getItem("bible-tools-game-theme") === "dark") {
-        html.setAttribute("data-theme", "dark");
+      function getStoredThemePreference() {
+        const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
 
-        themeToggle.textContent = "☀️ Light";
+        return storedTheme === "dark" ? "dark" : "light";
       }
 
-      themeToggle.addEventListener("click", () => {
-        const isDark = html.getAttribute("data-theme") === "dark";
+      function applyTheme(theme, persist = false) {
+        const isDark = theme === "dark";
+
         if (isDark) {
-          html.removeAttribute("data-theme");
-
-          themeToggle.textContent = "🌙 Dark";
-
-          localStorage.setItem("bible-tools-game-theme", "light");
-        } else {
           html.setAttribute("data-theme", "dark");
-
           themeToggle.textContent = "☀️ Light";
-
-          localStorage.setItem("bible-tools-game-theme", "dark");
+        } else {
+          html.removeAttribute("data-theme");
+          themeToggle.textContent = "🌙 Dark";
         }
+
+        if (persist) {
+          localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
+        }
+      }
+
+      applyTheme(getStoredThemePreference());
+
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = html.getAttribute("data-theme") === "dark"
+          ? "light"
+          : "dark";
+
+        applyTheme(nextTheme, true);
       });
     </script>
   </body>
