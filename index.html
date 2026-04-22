@@ -59,7 +59,7 @@
         font-family:
           -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         min-height: 100vh;
-        padding: 1.25rem;
+        padding: 0.875rem;
         transition:
           background 0.3s,
           color 0.3s;
@@ -71,17 +71,16 @@
       }
 
       .page__header {
-        align-items: center;
+        align-items: flex-start;
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: 0.625rem;
-        justify-content: space-between;
         margin-bottom: 1.25rem;
       }
 
       .page__title {
         color: var(--text-primary);
-        font-size: 1.6rem;
+        font-size: 1.3rem;
       }
 
       .page__title-link--icon {
@@ -91,6 +90,7 @@
       .page__controls {
         align-items: center;
         display: flex;
+        width: 100%;
         flex-wrap: wrap;
         gap: 0.625rem;
       }
@@ -123,6 +123,12 @@
         opacity: 0.6;
       }
 
+      .page__translation-select:focus-visible,
+      .page__theme-toggle:focus-visible {
+        outline: 0.125rem solid var(--accent);
+        outline-offset: 0.125rem;
+      }
+
       .page__translation-label {
         font-size: 0.9rem;
       }
@@ -151,9 +157,23 @@
         text-align: center;
       }
 
-      @media (max-width: 45rem) {
+      @media (min-width: 45rem) {
+        body {
+          padding: 1.25rem;
+        }
+
+        .page__header {
+          align-items: center;
+          flex-direction: row;
+          justify-content: space-between;
+        }
+
         .page__title {
-          font-size: 1.3rem;
+          font-size: 1.6rem;
+        }
+
+        .page__controls {
+          width: auto;
         }
       }
     </style>
@@ -174,6 +194,7 @@
             class="page__link page__title-link"
             id="titleReloadLink"
             href="https://bible-tools.github.io/game/"
+            aria-label="Bible Tools - Game home"
             >Bible Tools - Game</a
           >
         </h1>
@@ -181,8 +202,19 @@
           <label class="page__translation-label" for="translation"
             >Translation:</label
           >
-          <select class="page__translation-select" id="translation"></select>
-          <button class="page__theme-toggle" id="themeToggle">🌙 Dark</button>
+          <select
+            class="page__translation-select"
+            id="translation"
+            aria-label="Select translation"
+          ></select>
+          <button
+            class="page__theme-toggle"
+            id="themeToggle"
+            aria-label="Toggle dark theme"
+            aria-pressed="false"
+          >
+            🌙 Dark
+          </button>
         </div>
       </header>
 
@@ -803,7 +835,7 @@
 
             .game__input-group {
               display: flex;
-              flex-wrap: wrap;
+              flex-direction: column;
               gap: 0.625rem;
               margin-bottom: 0.9375rem;
             }
@@ -829,12 +861,17 @@
               transition: all 0.2s;
             }
 
+            .game__input {
+              width: 100%;
+            }
+
             .game__button {
               background: var(--accent);
               border: none;
               color: white;
               cursor: pointer;
               font-weight: 500;
+              width: 100%;
             }
 
             .game__button:hover {
@@ -854,6 +891,13 @@
             .game__button:disabled {
               cursor: not-allowed;
               opacity: 0.6;
+            }
+
+            .game__input:focus-visible,
+            .game__button:focus-visible,
+            .game__suggestion-item:focus-visible {
+              outline: 0.125rem solid var(--accent);
+              outline-offset: 0.125rem;
             }
 
             .game__feedback {
@@ -939,18 +983,18 @@
               color: white;
             }
 
-            @media (max-width: 45rem) {
+            @media (min-width: 45rem) {
               .game__verse-text {
-                font-size: 0.95rem;
+                font-size: 1.05rem;
               }
 
               .game__input-group {
-                flex-direction: column;
+                flex-direction: row;
               }
 
               .game__input,
               .game__button {
-                width: 100%;
+                width: auto;
               }
             }
           </style>
@@ -1442,12 +1486,12 @@
               <div class="game__verse-ref">${this.state.translation} • ${this.state.currentChapter}:${this.state.currentVerseNum} • ${this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random"}</div>
             </div>
 
-            <div class="game__section">
-              <h3 class="game__prompt">What book of the Bible?</h3>
-              <div class="game__guesses-grid" id="guessesGrid">
+            <div class="game__section" aria-labelledby="guessPrompt">
+              <h3 class="game__prompt" id="guessPrompt">What book of the Bible?</h3>
+              <div class="game__guesses-grid" id="guessesGrid" role="list" aria-label="Previous guesses">
                 ${this.renderGuesses()}
               </div>
-              <div id="feedback" class="game__feedback"></div>
+              <div id="feedback" class="game__feedback" role="status" aria-live="polite" aria-atomic="true"></div>
               ${this.renderGuessInput()}
               ${this.renderAnswerReveal()}
             </div>
@@ -1469,7 +1513,7 @@
             const guess = this.state.guesses[i];
             const isNew = animateRow && i === newestIdx;
 
-            html += '<div class="game__guess-row">';
+            html += '<div class="game__guess-row" role="listitem">';
 
             for (let j = 0; j < guess.length; j++) {
               const letter = guess[j].letter ?? "";
@@ -1494,10 +1538,10 @@
 
           const actionsHtml = `
             <div class="game__input-group game__input-group--actions">
-              <button class="game__button game__button--secondary" id="resetBtn">Reset</button>
-              <button class="game__button" id="newGameBtn">New Game</button>
-              <button class="game__button game__button--secondary" id="prevPuzzleBtn" ${hasPrevious ? "" : "disabled"}>Previous</button>
-              <button class="game__button game__button--secondary" id="nextPuzzleBtn" ${hasNext ? "" : "disabled"}>Next</button>
+              <button class="game__button game__button--secondary" id="resetBtn" aria-label="Reset current puzzle">Reset</button>
+              <button class="game__button" id="newGameBtn" aria-label="Start a new random puzzle">New Game</button>
+              <button class="game__button game__button--secondary" id="prevPuzzleBtn" aria-label="Go to previous puzzle" ${hasPrevious ? "" : "disabled"}>Previous</button>
+              <button class="game__button game__button--secondary" id="nextPuzzleBtn" aria-label="Go to next puzzle" ${hasNext ? "" : "disabled"}>Next</button>
             </div>
           `;
 
@@ -1514,9 +1558,14 @@
                   id="guessInput"
                   placeholder="Type book name..."
                   autocomplete="off"
+                  aria-label="Guess Bible book"
+                  aria-autocomplete="list"
+                  aria-controls="suggestionsList"
+                  aria-expanded="${this.state.suggestionList.length > 0 ? "true" : "false"}"
+                  aria-describedby="feedback"
                   ${this.state.attempts >= 6 ? "disabled" : ""}
                 >
-                <button class="game__button game__button--submit" id="submitBtn" ${this.state.attempts >= 6 ? "disabled" : ""}>
+                <button class="game__button game__button--submit" id="submitBtn" aria-label="Submit guess" ${this.state.attempts >= 6 ? "disabled" : ""}>
                   Guess
                 </button>
               </div>
@@ -1598,7 +1647,8 @@
         handleGuess(input, feedbackEl) {
           if (!input || this.state.gameOver) return;
 
-          const guess = input.value.trim();
+          const guess = this.sanitizeGuess(input.value);
+          input.value = guess;
           if (!guess) {
             feedbackEl.textContent = "Please enter a book name.";
             feedbackEl.className =
@@ -1675,6 +1725,10 @@
             .replace(/\p{Diacritic}/gu, "");
         }
 
+        sanitizeGuess(text) {
+          return String(text || "").trim();
+        }
+
         handleInput(input) {
           if (this.state.gameOver) {
             this.clearSuggestions();
@@ -1683,7 +1737,7 @@
 
           const rawValue = input.value;
           const query = this.normalizeForMatch(rawValue);
-          if (!rawValue) {
+          if (!this.sanitizeGuess(rawValue)) {
             this.clearSuggestions();
             return;
           }
@@ -1724,16 +1778,23 @@
           const list = this.shadowRoot.getElementById("suggestionsList");
           if (!list) return;
 
+          if (input) {
+            input.setAttribute(
+              "aria-expanded",
+              this.state.suggestionList.length > 0 ? "true" : "false",
+            );
+          }
+
           if (this.state.suggestionList.length === 0) {
             list.innerHTML = "";
             return;
           }
 
           list.innerHTML = this.state.suggestionList
-            .map(
-              (book) =>
-                `<li class="game__suggestion-item" role="option" data-value="${this.escapeHtml(book)}">${this.escapeHtml(book)}</li>`,
-            )
+            .map((book, index) => {
+              const isActive = index === this.state.activeSuggestion;
+              return `<li class="game__suggestion-item" role="option" id="suggestion-${index}" aria-selected="${isActive ? "true" : "false"}" data-value="${this.escapeHtml(book)}">${this.escapeHtml(book)}</li>`;
+            })
             .join("");
 
           list.querySelectorAll(".game__suggestion-item").forEach((item) => {
@@ -1783,19 +1844,43 @@
           this.state.suggestionList = [];
           this.state.activeSuggestion = -1;
           const list = this.shadowRoot.getElementById("suggestionsList");
+          const input = this.shadowRoot.getElementById("guessInput");
           if (list) list.innerHTML = "";
+
+          if (input) {
+            input.setAttribute("aria-expanded", "false");
+            input.removeAttribute("aria-activedescendant");
+          }
         }
 
         updateActiveSuggestion() {
           const list = this.shadowRoot.getElementById("suggestionsList");
+          const input = this.shadowRoot.getElementById("guessInput");
           if (!list) return;
 
           list.querySelectorAll(".game__suggestion-item").forEach((item, i) => {
+            const isActive = i === this.state.activeSuggestion;
             item.classList.toggle(
               "game__suggestion-item--active",
-              i === this.state.activeSuggestion,
+              isActive,
             );
+            item.setAttribute("aria-selected", isActive ? "true" : "false");
+
+            if (isActive) {
+              item.scrollIntoView({ block: "nearest" });
+            }
           });
+
+          if (input) {
+            if (this.state.activeSuggestion >= 0) {
+              input.setAttribute(
+                "aria-activedescendant",
+                `suggestion-${this.state.activeSuggestion}`,
+              );
+            } else {
+              input.removeAttribute("aria-activedescendant");
+            }
+          }
         }
       }
 
@@ -1838,6 +1923,8 @@
           html.removeAttribute("data-theme");
           themeToggle.textContent = "🌙 Dark";
         }
+
+        themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
 
         if (persist) {
           localStorage.setItem(THEME_STORAGE_KEY, isDark ? "dark" : "light");
