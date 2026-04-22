@@ -1168,7 +1168,19 @@
         }
 
         resetCurrentGame() {
-          this.startDailyGame();
+          if (this.state.puzzleMode === PUZZLE_MODE_RANDOM) {
+            this.startDailyGame();
+
+            return;
+          }
+
+          this.restartCurrentPuzzle();
+        }
+
+        restartCurrentPuzzle() {
+          this.state.pendingGuessInput = "";
+          this.resetPlayState();
+          this.updateUI();
         }
 
         startDailyGame() {
@@ -1546,19 +1558,38 @@
           const hasPrevious = this.state.puzzleHistoryIndex > 0;
           const hasNext =
             this.state.puzzleHistoryIndex < this.state.puzzleHistory.length - 1;
+          const hasRandomizedHistory = this.state.puzzleHistory.some(
+            (entry) => entry.puzzleMode === PUZZLE_MODE_RANDOM,
+          );
+          const primaryActionLabel =
+            this.state.puzzleMode === PUZZLE_MODE_RANDOM
+              ? "Back to Daily"
+              : "Restart";
+          const primaryActionAriaLabel =
+            this.state.puzzleMode === PUZZLE_MODE_RANDOM
+              ? "Back to daily puzzle"
+              : "Restart this puzzle";
           const canUseWebShare = this.canUseWebShare();
           const shareActionHtml = this.state.solved
             ? canUseWebShare
               ? '<button class="game__button" id="shareBtn" aria-label="Share this puzzle">Share</button>'
               : '<button class="game__button game__button--secondary" id="copyLinkBtn" aria-label="Copy puzzle link">Copy Link</button>'
             : "";
+          const prevPuzzleHtml =
+            hasRandomizedHistory && hasPrevious
+              ? '<button class="game__button game__button--secondary" id="prevPuzzleBtn" aria-label="Go to previous puzzle">Previous</button>'
+              : "";
+          const nextPuzzleHtml =
+            hasRandomizedHistory && hasNext
+              ? '<button class="game__button game__button--secondary" id="nextPuzzleBtn" aria-label="Go to next puzzle">Next</button>'
+              : "";
 
           const actionsHtml = `
             <div class="game__input-group game__input-group--actions">
-              <button class="game__button game__button--secondary" id="resetBtn" aria-label="Back to daily puzzle">Back to Daily</button>
-              <button class="game__button" id="newGameBtn" aria-label="Randomize puzzle">Randomize</button>
-              <button class="game__button game__button--secondary" id="prevPuzzleBtn" aria-label="Go to previous puzzle" ${hasPrevious ? "" : "disabled"}>Previous</button>
-              <button class="game__button game__button--secondary" id="nextPuzzleBtn" aria-label="Go to next puzzle" ${hasNext ? "" : "disabled"}>Next</button>
+              <button class="game__button game__button--secondary" id="resetBtn" aria-label="${primaryActionAriaLabel}">${primaryActionLabel}</button>
+              <button class="game__button" id="newGameBtn" aria-label="Start a new random puzzle">New Game</button>
+              ${prevPuzzleHtml}
+              ${nextPuzzleHtml}
               ${shareActionHtml}
             </div>
           `;
@@ -1589,7 +1620,6 @@
               </div>
               <ul class="game__suggestions" id="suggestionsList" role="listbox" aria-label="Book name suggestions"></ul>
             </div>
-            ${actionsHtml}
           `;
         }
 
