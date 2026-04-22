@@ -8,7 +8,8 @@
   "main": "build.mjs",
   "scripts": {
     "clean": "rimraf service-worker.js workbox-*.js",
-    "build": "workbox generateSW service-worker/workbox-config.cjs",
+    "build": "node build.mjs",
+    "build:workbox": "workbox generateSW service-worker/workbox-config.cjs",
     "start": "serve -s ."
   },
   "devDependencies": {
