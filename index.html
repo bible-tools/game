@@ -1536,6 +1536,12 @@
           const hasPrevious = this.state.puzzleHistoryIndex > 0;
           const hasNext =
             this.state.puzzleHistoryIndex < this.state.puzzleHistory.length - 1;
+          const canUseWebShare = this.canUseWebShare();
+          const shareActionHtml = this.state.solved
+            ? canUseWebShare
+              ? '<button class="game__button" id="shareBtn" aria-label="Share this puzzle">Share</button>'
+              : '<button class="game__button game__button--secondary" id="copyLinkBtn" aria-label="Copy puzzle link">Copy Link</button>'
+            : "";
 
           const actionsHtml = `
             <div class="game__input-group game__input-group--actions">
@@ -1543,6 +1549,7 @@
               <button class="game__button" id="newGameBtn" aria-label="Start a new random puzzle">New Game</button>
               <button class="game__button game__button--secondary" id="prevPuzzleBtn" aria-label="Go to previous puzzle" ${hasPrevious ? "" : "disabled"}>Previous</button>
               <button class="game__button game__button--secondary" id="nextPuzzleBtn" aria-label="Go to next puzzle" ${hasNext ? "" : "disabled"}>Next</button>
+              ${shareActionHtml}
             </div>
           `;
 
@@ -1595,6 +1602,8 @@
           const newGameBtn = this.shadowRoot.getElementById("newGameBtn");
           const prevPuzzleBtn = this.shadowRoot.getElementById("prevPuzzleBtn");
           const nextPuzzleBtn = this.shadowRoot.getElementById("nextPuzzleBtn");
+          const shareBtn = this.shadowRoot.getElementById("shareBtn");
+          const copyLinkBtn = this.shadowRoot.getElementById("copyLinkBtn");
 
           if (input) {
             input.focus();
@@ -1631,6 +1640,14 @@
 
           if (nextPuzzleBtn) {
             nextPuzzleBtn.addEventListener("click", () => this.goToPuzzleHistory(1));
+          }
+
+          if (shareBtn) {
+            shareBtn.addEventListener("click", () => this.handleSharePuzzle(feedback));
+          }
+
+          if (copyLinkBtn) {
+            copyLinkBtn.addEventListener("click", () => this.copyPuzzleLink(feedback));
           }
 
           const wrapper = this.shadowRoot.getElementById("autocompleteWrapper");
@@ -1709,6 +1726,104 @@
 
         newGame() {
           this.startRandomGame();
+        }
+
+        getShareUrl() {
+          return `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash}`;
+        }
+
+        getShareData() {
+          const targetDisplay = this.state.currentBookDisplay || this.state.currentBook;
+          const gameType = this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random";
+          const guessesUsed = this.state.attempts;
+
+          return {
+            title: "Bible Tools - Game",
+            text: `I solved the ${gameType} Bible verse puzzle in ${guessesUsed} guess${guessesUsed === 1 ? "" : "es"}! (${targetDisplay} ${this.state.currentChapter}:${this.state.currentVerseNum})`,
+            url: this.getShareUrl(),
+          };
+        }
+
+        canUseWebShare() {
+          if (!globalThis.isSecureContext) {
+            return false;
+          }
+
+          const shareFn = Reflect.get(navigator, "share");
+          if (typeof shareFn !== "function") {
+            return false;
+          }
+
+          const canShareFn = Reflect.get(navigator, "canShare");
+          if (typeof canShareFn !== "function") {
+            return true;
+          }
+
+          try {
+            return canShareFn.call(navigator, { url: this.getShareUrl() });
+          } catch {
+            return false;
+          }
+        }
+
+        async handleSharePuzzle(feedbackEl) {
+          if (!this.state.solved || !this.canUseWebShare()) {
+            return;
+          }
+
+          const shareFn = Reflect.get(navigator, "share");
+
+          try {
+            await shareFn.call(navigator, this.getShareData());
+          } catch (error) {
+            if (error?.name === "AbortError") {
+              return;
+            }
+
+            const didCopy = await this.copyPuzzleLink(feedbackEl);
+            if (!didCopy && feedbackEl) {
+              feedbackEl.textContent = "Could not share this puzzle on this device.";
+              feedbackEl.className =
+                "game__feedback game__feedback--show game__feedback--incorrect";
+            }
+          }
+        }
+
+        async copyPuzzleLink(feedbackEl) {
+          const shareUrl = this.getShareUrl();
+          const clipboard = Reflect.get(navigator, "clipboard");
+          const writeText = clipboard
+            ? Reflect.get(clipboard, "writeText")
+            : undefined;
+
+          if (typeof writeText === "function") {
+            try {
+              await writeText.call(clipboard, shareUrl);
+
+              if (feedbackEl) {
+                feedbackEl.textContent = "Puzzle link copied. Share it with a friend!";
+                feedbackEl.className =
+                  "game__feedback game__feedback--show game__feedback--hint";
+              }
+
+              return true;
+            } catch {
+              // Fall through to manual fallback prompt.
+            }
+          }
+
+          const copied = globalThis.prompt(
+            "Copy this puzzle link and share it:",
+            shareUrl,
+          );
+
+          if (feedbackEl && copied !== null) {
+            feedbackEl.textContent = "Puzzle link ready to share.";
+            feedbackEl.className =
+              "game__feedback game__feedback--show game__feedback--hint";
+          }
+
+          return copied !== null;
         }
 
         escapeHtml(text) {
