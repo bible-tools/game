@@ -1418,71 +1418,17 @@
             return staticMap;
           }
 
-          // Fallback: try to fetch from API
-          const fallbackMap = Object.fromEntries(
-            canonicalBooks.map((book) => [book, book]),
-          );
-          const baseUrl = getTranslationBaseUrl(this.state.translation);
+          const bookNameMap = {};
+          for (let i = 0; i < canonicalBooks.length; i++) {
+            const book = canonicalBooks[i];
 
-          try {
-            const res = await fetch(`${baseUrl}/index.json`);
-            if (!res.ok) {
-              const partialStaticMap = Object.keys(staticMap).length > 0
-                ? staticMap
-                : fallbackMap;
-
-              this.state.localizedBookNamesCache[this.state.translation] =
-                partialStaticMap;
-
-              return partialStaticMap;
-            }
-
-            const translationIndex = await res.json();
-            const indexBooks = Array.isArray(translationIndex.books)
-              ? translationIndex.books
-              : [];
-
-            if (indexBooks.length === 0) {
-              const partialStaticMap = Object.keys(staticMap).length > 0
-                ? staticMap
-                : fallbackMap;
-
-              this.state.localizedBookNamesCache[this.state.translation] =
-                partialStaticMap;
-
-              return partialStaticMap;
-            }
-
-            const bookNameMap = {};
-            for (let i = 0; i < canonicalBooks.length; i++) {
-              const book = canonicalBooks[i];
-              const localizedName = indexBooks[i]?.name;
-
-              // Prefer our static canonical map for supported languages.
-              // Some translation indexes return English names even for localized versions.
-              bookNameMap[book] =
-                staticMap[book] ||
-                (typeof localizedName === "string" && localizedName.trim()
-                  ? localizedName
-                  : book);
-            }
-
-            this.state.localizedBookNamesCache[this.state.translation] =
-              bookNameMap;
-
-            return bookNameMap;
-          } catch (error) {
-            console.warn("Failed to load localized book names", error);
-
-            const partialStaticMap = Object.keys(staticMap).length > 0
-              ? staticMap
-              : fallbackMap;
-
-            this.state.localizedBookNamesCache[this.state.translation] =
-              partialStaticMap;
-
-            return partialStaticMap;
+            bookNameMap[book] = staticMap[book] || book;
           }
+
+          this.state.localizedBookNamesCache[this.state.translation] =
+            bookNameMap;
+
+          return bookNameMap;
         }
 
         getCurrentLanguageCode() {
