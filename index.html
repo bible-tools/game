@@ -280,7 +280,9 @@
         }
 
         const now = Date.now().toString(36);
-        const entropy = Array.from(words, (word) => word.toString(36)).join("-");
+        const entropy = Array.from(words, (word) => word.toString(36)).join(
+          "-",
+        );
         let id = `random:${now}:${entropy}`;
 
         if (id === previousId) {
@@ -291,9 +293,10 @@
       }
 
       function derivePuzzleSelection(reference, puzzleId, books) {
-        const canonicalBooks = Array.isArray(books) && books.length > 0
-          ? books
-          : Object.keys(reference?.books || {});
+        const canonicalBooks =
+          Array.isArray(books) && books.length > 0
+            ? books
+            : Object.keys(reference?.books || {});
 
         if (canonicalBooks.length === 0) {
           throw new Error("Reference data does not contain any books");
@@ -301,7 +304,9 @@
 
         const bookSeed = hashStringToUint32(`${puzzleId}|book`);
         const book = canonicalBooks[bookSeed % canonicalBooks.length];
-        const chapterKeys = Object.keys(reference.books?.[book]?.chapters || {});
+        const chapterKeys = Object.keys(
+          reference.books?.[book]?.chapters || {},
+        );
 
         if (chapterKeys.length === 0) {
           throw new Error(`Book has no chapters: ${book}`);
@@ -316,7 +321,9 @@
           throw new Error(`Chapter has no verses: ${book} ${chapterKey}`);
         }
 
-        const verseSeed = hashStringToUint32(`${puzzleId}|${book}|${chapterKey}|verse`);
+        const verseSeed = hashStringToUint32(
+          `${puzzleId}|${book}|${chapterKey}|verse`,
+        );
         const verseNum = (verseSeed % verseCount) + 1;
 
         return {
@@ -387,89 +394,350 @@
       // Keyed by language code, arrays are 1-indexed (position 0 is book 1)
       const CANONICAL_BOOK_NAMES = Object.freeze({
         en: [
-          "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy",
-          "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel",
-          "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra",
-          "Nehemiah", "Esther", "Job", "Psalms", "Proverbs",
-          "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations",
-          "Ezekiel", "Daniel", "Hosea", "Joel", "Amos",
-          "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
-          "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew",
-          "Mark", "Luke", "John", "Acts", "Romans",
-          "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians",
-          "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy",
-          "Titus", "Philemon", "Hebrews", "James", "1 Peter",
-          "2 Peter", "1 John", "2 John", "3 John", "Jude",
-          "Revelation of John"
+          "Genesis",
+          "Exodus",
+          "Leviticus",
+          "Numbers",
+          "Deuteronomy",
+          "Joshua",
+          "Judges",
+          "Ruth",
+          "1 Samuel",
+          "2 Samuel",
+          "1 Kings",
+          "2 Kings",
+          "1 Chronicles",
+          "2 Chronicles",
+          "Ezra",
+          "Nehemiah",
+          "Esther",
+          "Job",
+          "Psalms",
+          "Proverbs",
+          "Ecclesiastes",
+          "Song of Solomon",
+          "Isaiah",
+          "Jeremiah",
+          "Lamentations",
+          "Ezekiel",
+          "Daniel",
+          "Hosea",
+          "Joel",
+          "Amos",
+          "Obadiah",
+          "Jonah",
+          "Micah",
+          "Nahum",
+          "Habakkuk",
+          "Zephaniah",
+          "Haggai",
+          "Zechariah",
+          "Malachi",
+          "Matthew",
+          "Mark",
+          "Luke",
+          "John",
+          "Acts",
+          "Romans",
+          "1 Corinthians",
+          "2 Corinthians",
+          "Galatians",
+          "Ephesians",
+          "Philippians",
+          "Colossians",
+          "1 Thessalonians",
+          "2 Thessalonians",
+          "1 Timothy",
+          "2 Timothy",
+          "Titus",
+          "Philemon",
+          "Hebrews",
+          "James",
+          "1 Peter",
+          "2 Peter",
+          "1 John",
+          "2 John",
+          "3 John",
+          "Jude",
+          "Revelation of John",
         ],
         es: [
-          "Génesis", "Éxodo", "Levítico", "Números", "Deuteronomio",
-          "Josué", "Jueces", "Rut", "1 Samuel", "2 Samuel",
-          "1 Reyes", "2 Reyes", "1 Crónicas", "2 Crónicas", "Esdras",
-          "Nehemías", "Ester", "Job", "Salmos", "Proverbios",
-          "Eclesiastés", "Cantares", "Isaías", "Jeremías", "Lamentaciones",
-          "Ezequiel", "Daniel", "Oseas", "Joel", "Amós",
-          "Abdías", "Jonás", "Miqueas", "Nahúm", "Habacuc",
-          "Sofonías", "Hageo", "Zacarías", "Malaquías", "Mateo",
-          "Marcos", "Lucas", "Juan", "Hechos", "Romanos",
-          "1 Corintios", "2 Corintios", "Gálatas", "Efesios", "Filipenses",
-          "Colosenses", "1 Tesalonicenses", "2 Tesalonicenses", "1 Timoteo", "2 Timoteo",
-          "Tito", "Filemón", "Hebreos", "Santiago", "1 Pedro",
-          "2 Pedro", "1 Juan", "2 Juan", "3 Juan", "Judas",
-          "Apocalipsis"
+          "Génesis",
+          "Éxodo",
+          "Levítico",
+          "Números",
+          "Deuteronomio",
+          "Josué",
+          "Jueces",
+          "Rut",
+          "1 Samuel",
+          "2 Samuel",
+          "1 Reyes",
+          "2 Reyes",
+          "1 Crónicas",
+          "2 Crónicas",
+          "Esdras",
+          "Nehemías",
+          "Ester",
+          "Job",
+          "Salmos",
+          "Proverbios",
+          "Eclesiastés",
+          "Cantares",
+          "Isaías",
+          "Jeremías",
+          "Lamentaciones",
+          "Ezequiel",
+          "Daniel",
+          "Oseas",
+          "Joel",
+          "Amós",
+          "Abdías",
+          "Jonás",
+          "Miqueas",
+          "Nahúm",
+          "Habacuc",
+          "Sofonías",
+          "Hageo",
+          "Zacarías",
+          "Malaquías",
+          "Mateo",
+          "Marcos",
+          "Lucas",
+          "Juan",
+          "Hechos",
+          "Romanos",
+          "1 Corintios",
+          "2 Corintios",
+          "Gálatas",
+          "Efesios",
+          "Filipenses",
+          "Colosenses",
+          "1 Tesalonicenses",
+          "2 Tesalonicenses",
+          "1 Timoteo",
+          "2 Timoteo",
+          "Tito",
+          "Filemón",
+          "Hebreos",
+          "Santiago",
+          "1 Pedro",
+          "2 Pedro",
+          "1 Juan",
+          "2 Juan",
+          "3 Juan",
+          "Judas",
+          "Apocalipsis",
         ],
         fr: [
-          "Genèse", "Exode", "Lévitique", "Nombres", "Deutéronome",
-          "Josué", "Juges", "Ruth", "1 Samuel", "2 Samuel",
-          "1 Rois", "2 Rois", "1 Chroniques", "2 Chroniques", "Esdras",
-          "Néhémie", "Esther", "Job", "Psaumes", "Proverbes",
-          "Ecclésiaste", "Cantique des cantiques", "Ésaïe", "Jérémie", "Lamentations",
-          "Ézéchiel", "Daniel", "Osée", "Joël", "Amos",
-          "Abdias", "Jonas", "Michée", "Nahum", "Habakuk",
-          "Sophonie", "Aggée", "Zacharie", "Malachie", "Matthieu",
-          "Marc", "Luc", "Jean", "Actes", "Romains",
-          "1 Corinthiens", "2 Corinthiens", "Galates", "Éphésiens", "Philippiens",
-          "Colossiens", "1 Thessaloniciens", "2 Thessaloniciens", "1 Timothée", "2 Timothée",
-          "Tite", "Philémon", "Hébreux", "Jacques", "1 Pierre",
-          "2 Pierre", "1 Jean", "2 Jean", "3 Jean", "Jude",
-          "Apocalypse"
+          "Genèse",
+          "Exode",
+          "Lévitique",
+          "Nombres",
+          "Deutéronome",
+          "Josué",
+          "Juges",
+          "Ruth",
+          "1 Samuel",
+          "2 Samuel",
+          "1 Rois",
+          "2 Rois",
+          "1 Chroniques",
+          "2 Chroniques",
+          "Esdras",
+          "Néhémie",
+          "Esther",
+          "Job",
+          "Psaumes",
+          "Proverbes",
+          "Ecclésiaste",
+          "Cantique des cantiques",
+          "Ésaïe",
+          "Jérémie",
+          "Lamentations",
+          "Ézéchiel",
+          "Daniel",
+          "Osée",
+          "Joël",
+          "Amos",
+          "Abdias",
+          "Jonas",
+          "Michée",
+          "Nahum",
+          "Habakuk",
+          "Sophonie",
+          "Aggée",
+          "Zacharie",
+          "Malachie",
+          "Matthieu",
+          "Marc",
+          "Luc",
+          "Jean",
+          "Actes",
+          "Romains",
+          "1 Corinthiens",
+          "2 Corinthiens",
+          "Galates",
+          "Éphésiens",
+          "Philippiens",
+          "Colossiens",
+          "1 Thessaloniciens",
+          "2 Thessaloniciens",
+          "1 Timothée",
+          "2 Timothée",
+          "Tite",
+          "Philémon",
+          "Hébreux",
+          "Jacques",
+          "1 Pierre",
+          "2 Pierre",
+          "1 Jean",
+          "2 Jean",
+          "3 Jean",
+          "Jude",
+          "Apocalypse",
         ],
         de: [
-          "1. Mose", "2. Mose", "3. Mose", "4. Mose", "5. Mose",
-          "Josua", "Richter", "Rut", "1. Samuel", "2. Samuel",
-          "1. Könige", "2. Könige", "1. Chronik", "2. Chronik", "Esra",
-          "Nehemia", "Ester", "Hiob", "Psalmen", "Sprichwörter",
-          "Prediger", "Hoheslied", "Jesaja", "Jeremia", "Klagelieder",
-          "Hesekiel", "Daniel", "Hosea", "Joel", "Amos",
-          "Obadja", "Jona", "Micha", "Nahum", "Habakuk",
-          "Zephanja", "Haggai", "Sacharja", "Maleachi", "Matthäus",
-          "Markus", "Lukas", "Johannes", "Apostelgeschichte", "Römer",
-          "1. Korinther", "2. Korinther", "Galater", "Epheser", "Philipper",
-          "Kolosser", "1. Thessalonicher", "2. Thessalonicher", "1. Timotheus", "2. Timotheus",
-          "Titus", "Philemon", "Hebräer", "Jakobus", "1. Petrus",
-          "2. Petrus", "1. Johannes", "2. Johannes", "3. Johannes", "Judas",
-          "Offenbarung"
+          "1. Mose",
+          "2. Mose",
+          "3. Mose",
+          "4. Mose",
+          "5. Mose",
+          "Josua",
+          "Richter",
+          "Rut",
+          "1. Samuel",
+          "2. Samuel",
+          "1. Könige",
+          "2. Könige",
+          "1. Chronik",
+          "2. Chronik",
+          "Esra",
+          "Nehemia",
+          "Ester",
+          "Hiob",
+          "Psalmen",
+          "Sprichwörter",
+          "Prediger",
+          "Hoheslied",
+          "Jesaja",
+          "Jeremia",
+          "Klagelieder",
+          "Hesekiel",
+          "Daniel",
+          "Hosea",
+          "Joel",
+          "Amos",
+          "Obadja",
+          "Jona",
+          "Micha",
+          "Nahum",
+          "Habakuk",
+          "Zephanja",
+          "Haggai",
+          "Sacharja",
+          "Maleachi",
+          "Matthäus",
+          "Markus",
+          "Lukas",
+          "Johannes",
+          "Apostelgeschichte",
+          "Römer",
+          "1. Korinther",
+          "2. Korinther",
+          "Galater",
+          "Epheser",
+          "Philipper",
+          "Kolosser",
+          "1. Thessalonicher",
+          "2. Thessalonicher",
+          "1. Timotheus",
+          "2. Timotheus",
+          "Titus",
+          "Philemon",
+          "Hebräer",
+          "Jakobus",
+          "1. Petrus",
+          "2. Petrus",
+          "1. Johannes",
+          "2. Johannes",
+          "3. Johannes",
+          "Judas",
+          "Offenbarung",
         ],
         ar: [
-          "التكوين", "الخروج", "اللاويين", "العدد", "التثنية",
-          "يشوع", "القضاة", "راعوث", "صموئيل الأول", "صموئيل الثاني",
-          "الملوك الأول", "الملوك الثاني", "أخبار الأيام الأول", "أخبار الأيام الثاني", "عزرا",
-          "نحميا", "استير", "أيوب", "المزامير", "الأمثال",
-          "الجامعة", "نشيد الأنشاد", "إشعياء", "إرميا", "المراثي",
-          "حزقيال", "دانيال", "هوشع", "يوئيل", "عاموس",
-          "عوبديا", "يونان", "ميخا", "ناحوم", "حبقوق",
-          "صفنيا", "حجي", "زكريا", "ملاخي", "متى",
-          "مرقس", "لوقا", "يوحنا", "الأعمال", "رومية",
-          "1 كورنثوس", "2 كورنثوس", "غلاطية", "أفسس", "فيليبي",
-          "كولوسي", "1 تسالونيكي", "2 تسالونيكي", "1 تيموثاوس", "2 تيموثاوس",
-          "تيطس", "فيليمون", "العبرانيين", "يعقوب", "1 بطرس",
-          "2 بطرس", "1 يوحنا", "2 يوحنا", "3 يوحنا", "يهوذا",
-          "الرؤيا"
-        ]
+          "التكوين",
+          "الخروج",
+          "اللاويين",
+          "العدد",
+          "التثنية",
+          "يشوع",
+          "القضاة",
+          "راعوث",
+          "صموئيل الأول",
+          "صموئيل الثاني",
+          "الملوك الأول",
+          "الملوك الثاني",
+          "أخبار الأيام الأول",
+          "أخبار الأيام الثاني",
+          "عزرا",
+          "نحميا",
+          "استير",
+          "أيوب",
+          "المزامير",
+          "الأمثال",
+          "الجامعة",
+          "نشيد الأنشاد",
+          "إشعياء",
+          "إرميا",
+          "المراثي",
+          "حزقيال",
+          "دانيال",
+          "هوشع",
+          "يوئيل",
+          "عاموس",
+          "عوبديا",
+          "يونان",
+          "ميخا",
+          "ناحوم",
+          "حبقوق",
+          "صفنيا",
+          "حجي",
+          "زكريا",
+          "ملاخي",
+          "متى",
+          "مرقس",
+          "لوقا",
+          "يوحنا",
+          "الأعمال",
+          "رومية",
+          "١ كورنثوس",
+          "٢ كورنثوس",
+          "غلاطية",
+          "أفسس",
+          "فيليبي",
+          "كولوسي",
+          "١ تسالونيكي",
+          "٢ تسالونيكي",
+          "١ تيموثاوس",
+          "٢ تيموثاوس",
+          "تيطس",
+          "فيليمون",
+          "العبرانيين",
+          "يعقوب",
+          "١ بطرس",
+          "٢ بطرس",
+          "١ يوحنا",
+          "٢ يوحنا",
+          "٣ يوحنا",
+          "يهوذا",
+          "الرؤيا",
+        ],
       });
 
       function getCanonicalBookNameByIndex(bookIndex, languageCode) {
-        const books = CANONICAL_BOOK_NAMES[languageCode] || CANONICAL_BOOK_NAMES.en;
+        const books =
+          CANONICAL_BOOK_NAMES[languageCode] || CANONICAL_BOOK_NAMES.en;
         return books[bookIndex - 1] || null; // bookIndex is 1-based
       }
 
@@ -570,14 +838,17 @@
 
         const normalizedVersion = rawVersion.toLowerCase();
         const matchedTranslation = preferences.translations.find(
-          (translation) => translation.version.toLowerCase() === normalizedVersion,
+          (translation) =>
+            translation.version.toLowerCase() === normalizedVersion,
         );
 
         return matchedTranslation?.version || preferences.defaultVersion;
       }
 
       function resolveInitialTranslationVersion() {
-        const rawParam = new URLSearchParams(window.location.search).get("translation");
+        const rawParam = new URLSearchParams(window.location.search).get(
+          "translation",
+        );
 
         return resolveTranslationVersion(rawParam);
       }
@@ -1017,14 +1288,18 @@
         setupGlobalEvents() {
           window.addEventListener("popstate", this.onPopState);
           window.addEventListener("focus", this.onVisibilityOrFocus);
-          document.addEventListener("visibilitychange", this.onVisibilityOrFocus);
+          document.addEventListener(
+            "visibilitychange",
+            this.onVisibilityOrFocus,
+          );
         }
 
         applyUrlState({ addHistoryEntry }) {
           const params = new URLSearchParams(window.location.search);
           const requestedTranslation = params.get("translation");
 
-          this.state.translation = resolveTranslationVersion(requestedTranslation);
+          this.state.translation =
+            resolveTranslationVersion(requestedTranslation);
 
           const translationSelect = document.getElementById("translation");
           if (translationSelect) {
@@ -1117,7 +1392,10 @@
 
           const nextIndex = this.state.puzzleHistoryIndex + 1;
 
-          this.state.puzzleHistory = this.state.puzzleHistory.slice(0, nextIndex);
+          this.state.puzzleHistory = this.state.puzzleHistory.slice(
+            0,
+            nextIndex,
+          );
           this.state.puzzleHistory.push(entry);
           this.state.puzzleHistoryIndex = this.state.puzzleHistory.length - 1;
         }
@@ -1221,7 +1499,8 @@
           }
 
           const entry = this.state.puzzleHistory[nextIndex];
-          const translationChanged = entry.translation !== this.state.translation;
+          const translationChanged =
+            entry.translation !== this.state.translation;
 
           this.state.puzzleHistoryIndex = nextIndex;
           this.state.puzzleId = entry.puzzleId;
@@ -1262,11 +1541,10 @@
           this.state.pendingGuessInput = "";
           this.resetPlayState();
 
-          this.setPuzzle(
-            makeDailyPuzzleId(localDateKey),
-            PUZZLE_MODE_DAILY,
-            { addHistoryEntry: true, pushUrl: true },
-          );
+          this.setPuzzle(makeDailyPuzzleId(localDateKey), PUZZLE_MODE_DAILY, {
+            addHistoryEntry: true,
+            pushUrl: true,
+          });
 
           this.loadGame();
         }
@@ -1315,12 +1593,15 @@
             );
 
             if (this.state.filteredCanonicalBooks.length === 0) {
-              throw new Error("No books available after applying default filter");
+              throw new Error(
+                "No books available after applying default filter",
+              );
             }
 
-            this.state.localizedBookNames = this.state.filteredCanonicalBooks.map(
-              (book) => this.state.bookNameMap[book] || book,
-            );
+            this.state.localizedBookNames =
+              this.state.filteredCanonicalBooks.map(
+                (book) => this.state.bookNameMap[book] || book,
+              );
 
             const selection = derivePuzzleSelection(
               reference,
@@ -1379,7 +1660,8 @@
         }
 
         async getBookNameMap(reference) {
-          const cached = this.state.localizedBookNamesCache[this.state.translation];
+          const cached =
+            this.state.localizedBookNamesCache[this.state.translation];
           if (cached) {
             return cached;
           }
@@ -1390,10 +1672,13 @@
           // First, build from static canonical book names
           const staticMap = {};
           let builtFromStatic = true;
+          const defaultBooksByIndex = COMMUNITY_DEFAULT_CANONICAL_BOOKS;
 
           for (let i = 0; i < canonicalBooks.length; i++) {
             const book = canonicalBooks[i];
-            const canonicalIndex = COMMUNITY_DEFAULT_CANONICAL_BOOKS.indexOf(book);
+            const canonicalIndex = defaultBooksByIndex.findIndex(
+              (defaultBook) => this.isEquivalentBookLabel(book, defaultBook),
+            );
 
             if (canonicalIndex === -1) {
               builtFromStatic = false;
@@ -1413,8 +1698,12 @@
           }
 
           // If static map was complete, cache and return it
-          if (builtFromStatic && Object.keys(staticMap).length === canonicalBooks.length) {
-            this.state.localizedBookNamesCache[this.state.translation] = staticMap;
+          if (
+            builtFromStatic &&
+            Object.keys(staticMap).length === canonicalBooks.length
+          ) {
+            this.state.localizedBookNamesCache[this.state.translation] =
+              staticMap;
             return staticMap;
           }
 
@@ -1436,10 +1725,12 @@
         }
 
         getDefaultFilteredBooks(canonicalBooks) {
-          const canonicalBookSet = new Set(canonicalBooks);
-          const filtered = COMMUNITY_DEFAULT_CANONICAL_BOOKS.filter((book) =>
-            canonicalBookSet.has(book),
-          );
+          const filtered = COMMUNITY_DEFAULT_CANONICAL_BOOKS.map(
+            (defaultBook) =>
+              canonicalBooks.find((canonicalBook) =>
+                this.isEquivalentBookLabel(canonicalBook, defaultBook),
+              ),
+          ).filter(Boolean);
 
           return filtered.length > 0 ? filtered : canonicalBooks;
         }
@@ -1633,19 +1924,27 @@
           }
 
           if (prevPuzzleBtn) {
-            prevPuzzleBtn.addEventListener("click", () => this.goToPuzzleHistory(-1));
+            prevPuzzleBtn.addEventListener("click", () =>
+              this.goToPuzzleHistory(-1),
+            );
           }
 
           if (nextPuzzleBtn) {
-            nextPuzzleBtn.addEventListener("click", () => this.goToPuzzleHistory(1));
+            nextPuzzleBtn.addEventListener("click", () =>
+              this.goToPuzzleHistory(1),
+            );
           }
 
           if (shareBtn) {
-            shareBtn.addEventListener("click", () => this.handleSharePuzzle(feedback));
+            shareBtn.addEventListener("click", () =>
+              this.handleSharePuzzle(feedback),
+            );
           }
 
           if (copyLinkBtn) {
-            copyLinkBtn.addEventListener("click", () => this.copyPuzzleLink(feedback));
+            copyLinkBtn.addEventListener("click", () =>
+              this.copyPuzzleLink(feedback),
+            );
           }
 
           const wrapper = this.shadowRoot.getElementById("autocompleteWrapper");
@@ -1673,12 +1972,11 @@
             return;
           }
 
-          const guessNorm = this.normalizeForMatch(guess);
-          const targetDisplay = this.state.currentBookDisplay || this.state.currentBook;
-          const targetDisplayNorm = this.normalizeForMatch(targetDisplay);
-          const targetCanonicalNorm = this.normalizeForMatch(this.state.currentBook);
+          const targetDisplay =
+            this.state.currentBookDisplay || this.state.currentBook;
           const isCorrect =
-            guessNorm === targetDisplayNorm || guessNorm === targetCanonicalNorm;
+            this.isEquivalentBookLabel(guess, targetDisplay) ||
+            this.isEquivalentBookLabel(guess, this.state.currentBook);
           const evaluation = evaluateGuess(guess, targetDisplay);
 
           // Store guess
@@ -1731,8 +2029,10 @@
         }
 
         getShareData() {
-          const targetDisplay = this.state.currentBookDisplay || this.state.currentBook;
-          const gameType = this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random";
+          const targetDisplay =
+            this.state.currentBookDisplay || this.state.currentBook;
+          const gameType =
+            this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random";
           const guessesUsed = this.state.attempts;
 
           return {
@@ -1780,7 +2080,8 @@
 
             const didCopy = await this.copyPuzzleLink(feedbackEl);
             if (!didCopy && feedbackEl) {
-              feedbackEl.textContent = "Could not share this puzzle on this device.";
+              feedbackEl.textContent =
+                "Could not share this puzzle on this device.";
               feedbackEl.className =
                 "game__feedback game__feedback--show game__feedback--incorrect";
             }
@@ -1799,7 +2100,8 @@
               await writeText.call(clipboard, shareUrl);
 
               if (feedbackEl) {
-                feedbackEl.textContent = "Puzzle link copied. Share it with a friend!";
+                feedbackEl.textContent =
+                  "Puzzle link copied. Share it with a friend!";
                 feedbackEl.className =
                   "game__feedback game__feedback--show game__feedback--hint";
               }
@@ -1836,7 +2138,103 @@
             .trim()
             .toLowerCase()
             .normalize("NFD")
-            .replace(/\p{Diacritic}/gu, "");
+            .replace(/\p{Diacritic}/gu, "")
+            .replace(/\s+/g, " ");
+        }
+
+        getLeadingOrdinalValue(text) {
+          const base = this.normalizeForMatch(text);
+          if (!base) {
+            return null;
+          }
+
+          const firstToken = base.split(" ")[0].replace(/[.)]/g, "");
+          const numeralToDigit = {
+            first: "1",
+            second: "2",
+            third: "3",
+            "1st": "1",
+            "2nd": "2",
+            "3rd": "3",
+            i: "1",
+            ii: "2",
+            iii: "3",
+            ⅰ: "1",
+            ⅱ: "2",
+            ⅲ: "3",
+            Ⅰ: "1",
+            Ⅱ: "2",
+            Ⅲ: "3",
+            1: "1",
+            2: "2",
+            3: "3",
+            "١": "1",
+            "٢": "2",
+            "٣": "3",
+          };
+
+          return numeralToDigit[firstToken] || null;
+        }
+
+        getBookSearchKeys(text) {
+          const base = this.normalizeForMatch(text);
+          if (!base) {
+            return [];
+          }
+
+          const keys = new Set([base, base.replace(/\s+/g, "")]);
+          const parts = base.split(" ");
+          const rest = parts.slice(1).join(" ").trim();
+          const digit = this.getLeadingOrdinalValue(base);
+          if (!digit || !rest) {
+            return [...keys];
+          }
+
+          const digitToRoman = {
+            1: "i",
+            2: "ii",
+            3: "iii",
+          };
+          const roman = digitToRoman[digit] || digit;
+          const digitVariant = `${digit} ${rest}`;
+          const romanVariant = `${roman} ${rest}`;
+
+          keys.add(digitVariant);
+          keys.add(romanVariant);
+          keys.add(digitVariant.replace(/\s+/g, ""));
+          keys.add(romanVariant.replace(/\s+/g, ""));
+
+          return [...keys];
+        }
+
+        getAutocompleteBookKeys(text) {
+          const keys = new Set(this.getBookSearchKeys(text));
+          const base = this.normalizeForMatch(text);
+          if (!base) {
+            return [];
+          }
+
+          const parts = base.split(" ");
+          const rest = parts.slice(1).join(" ").trim();
+          if (this.getLeadingOrdinalValue(base) && rest) {
+            keys.add(rest);
+            keys.add(rest.replace(/\s+/g, ""));
+          }
+
+          return [...keys];
+        }
+
+        isEquivalentBookLabel(left, right) {
+          const leftKeys = this.getBookSearchKeys(left);
+          const rightKeys = new Set(this.getBookSearchKeys(right));
+
+          for (let i = 0; i < leftKeys.length; i++) {
+            if (rightKeys.has(leftKeys[i])) {
+              return true;
+            }
+          }
+
+          return false;
         }
 
         sanitizeGuess(text) {
@@ -1850,7 +2248,11 @@
           }
 
           const rawValue = input.value;
-          const query = this.normalizeForMatch(rawValue);
+          const queryNorm = this.normalizeForMatch(rawValue);
+          const queryKeys = this.getBookSearchKeys(rawValue);
+          const queryOrdinal = this.getLeadingOrdinalValue(rawValue);
+          const queryIsOrdinalOnly =
+            Boolean(queryOrdinal) && queryNorm.split(" ").length === 1;
           if (!this.sanitizeGuess(rawValue)) {
             this.clearSuggestions();
             return;
@@ -1865,7 +2267,7 @@
               ? this.state.filteredCanonicalBooks
               : this.state.canonicalBooks;
 
-          if (query.length === 0) {
+          if (queryKeys.length === 0) {
             this.state.suggestionList = books;
             this.state.activeSuggestion = -1;
             this.renderSuggestionItems(input);
@@ -1878,13 +2280,30 @@
           for (let i = 0; i < books.length; i++) {
             const displayName = books[i];
             const alias = canonicalAliases[i] || "";
-            const displayNorm = this.normalizeForMatch(displayName);
-            const aliasNorm = this.normalizeForMatch(alias);
-            const startsWithMatch =
-              displayNorm.startsWith(query) || aliasNorm.startsWith(query);
+            const displayKeys = this.getAutocompleteBookKeys(displayName);
+            const aliasKeys = this.getAutocompleteBookKeys(alias);
+            const candidateKeys = [...displayKeys, ...aliasKeys];
+            const displayOrdinal = this.getLeadingOrdinalValue(displayName);
+            const aliasOrdinal = this.getLeadingOrdinalValue(alias);
+            const ordinalOnlyMatch =
+              queryIsOrdinalOnly &&
+              (displayOrdinal === queryOrdinal ||
+                aliasOrdinal === queryOrdinal);
+            const startsWithMatch = queryIsOrdinalOnly
+              ? ordinalOnlyMatch
+              : queryKeys.some((queryKey) =>
+                  candidateKeys.some((candidateKey) =>
+                    candidateKey.startsWith(queryKey),
+                  ),
+                );
             const includesMatch =
               !startsWithMatch &&
-              (displayNorm.includes(query) || aliasNorm.includes(query));
+              !queryIsOrdinalOnly &&
+              queryKeys.some((queryKey) =>
+                candidateKeys.some((candidateKey) =>
+                  candidateKey.includes(queryKey),
+                ),
+              );
 
             if (startsWithMatch) {
               prefix.push(displayName);
@@ -1893,7 +2312,10 @@
             }
           }
 
-          this.state.suggestionList = [...prefix, ...substring];
+          this.state.suggestionList =
+            prefix.length > 0 || substring.length > 0
+              ? [...prefix, ...substring]
+              : books;
           this.state.activeSuggestion = -1;
           this.renderSuggestionItems(input);
         }
@@ -1941,9 +2363,7 @@
           } else if (e.key === "ArrowUp") {
             e.preventDefault();
             this.state.activeSuggestion =
-              len === 0
-                ? -1
-                : (this.state.activeSuggestion - 1 + len) % len;
+              len === 0 ? -1 : (this.state.activeSuggestion - 1 + len) % len;
             this.updateActiveSuggestion();
           } else if (e.key === "Enter") {
             if (this.state.activeSuggestion >= 0 && len > 0) {
@@ -1984,10 +2404,7 @@
 
           list.querySelectorAll(".game__suggestion-item").forEach((item, i) => {
             const isActive = i === this.state.activeSuggestion;
-            item.classList.toggle(
-              "game__suggestion-item--active",
-              isActive,
-            );
+            item.classList.toggle("game__suggestion-item--active", isActive);
             item.setAttribute("aria-selected", isActive ? "true" : "false");
 
             if (isActive) {
@@ -2063,12 +2480,12 @@
       applyTheme(getStoredThemePreference());
 
       themeToggle.addEventListener("click", () => {
-        const nextTheme = html.getAttribute("data-theme") === "dark"
-          ? "light"
-          : "dark";
+        const nextTheme =
+          html.getAttribute("data-theme") === "dark" ? "light" : "dark";
 
         applyTheme(nextTheme, true);
       });
     </script>
+    <script type="module" src="service-worker/init.mjs"></script>
   </body>
 </html>
