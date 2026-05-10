@@ -78,13 +78,53 @@
         margin-bottom: 1.25rem;
       }
 
+      .page__header-bar {
+        align-items: center;
+        display: flex;
+        gap: 1rem;
+        justify-content: space-between;
+        width: 100%;
+      }
+
       .page__title {
         color: var(--text-primary);
         font-size: 1.3rem;
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 0;
       }
 
       .page__title-link--icon {
         text-decoration: none;
+      }
+
+      .page__header-actions {
+        align-items: center;
+        display: inline-flex;
+        flex: 0 0 auto;
+        gap: 0.5rem;
+        margin-left: auto;
+      }
+
+      @media (max-width: 30rem) {
+        .page__header-bar {
+          gap: 0.5rem;
+        }
+
+        .page__title {
+          flex: 0 0 auto;
+        }
+
+        .page__title-link:not(.page__title-link--icon) {
+          display: none;
+        }
+
+        .page__header-actions {
+          gap: 0.375rem;
+        }
       }
 
       .page__controls {
@@ -95,27 +135,205 @@
         gap: 0.625rem;
       }
 
-      .page__translation-select,
-      .page__theme-toggle {
+      .page__settings-toggle {
+        align-items: center;
+        background: var(--bg-secondary);
+        border: 0.0625rem solid var(--border);
+        border-radius: 999rem;
+        color: var(--text-primary);
+        cursor: pointer;
+        display: inline-flex;
+        height: 2.625rem;
+        justify-content: center;
+        width: 2.625rem;
+        transition:
+          background 0.2s,
+          border-color 0.2s,
+          color 0.2s,
+          transform 0.2s;
+      }
+
+      .page__settings-toggle:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .page__settings-toggle:active {
+        transform: scale(0.96);
+      }
+
+      .page__settings-toggle:focus-visible {
+        outline: 0.125rem solid var(--accent);
+        outline-offset: 0.125rem;
+      }
+
+      .page__settings-toggle-icon {
+        height: 1.125rem;
+        width: 1.125rem;
+      }
+
+      .page__settings-panel {
+        background: var(--bg-secondary);
+        border: 0.0625rem solid var(--border);
+        border-radius: 0.875rem;
+        box-shadow: 0 0.125rem 0.75rem rgba(0, 0, 0, 0.08);
+        display: grid;
+        gap: 0.875rem;
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+        padding: 0.875rem;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease,
+          max-height 0.25s ease,
+          margin-top 0.25s ease;
+      }
+
+      .page__settings-panel[hidden] {
+        display: grid;
+        margin-bottom: 0;
+        margin-top: -0.5rem;
+        max-height: 0;
+        opacity: 0;
+        padding-bottom: 0;
+        padding-top: 0;
+        pointer-events: none;
+        transform: translateY(-0.5rem);
+      }
+
+      .page__settings-group {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.625rem;
+      }
+
+      .page__settings-group--primary {
+        align-items: stretch;
+        display: grid;
+        gap: 0.625rem;
+        grid-template-columns: 1fr;
+        width: 100%;
+      }
+
+      .page__settings-group--secondary {
+        align-items: stretch;
+        display: grid;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .page__settings-label {
+        font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      .page__range {
+        flex: 1;
+        align-items: center;
+        display: flex;
+        gap: 0.75rem;
+        min-width: 0;
+      }
+
+      .page__range-input {
+        accent-color: var(--accent);
+        appearance: none;
+        -webkit-appearance: none;
+        background: transparent;
+        flex: 1;
+        height: 2.25rem;
+        touch-action: pan-y;
+        width: 100%;
+      }
+
+      .page__range-input::-webkit-slider-runnable-track {
+        background: var(--border);
+        border-radius: 999rem;
+        height: 0.375rem;
+      }
+
+      .page__range-input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--accent);
+        border: 0.125rem solid var(--bg-secondary);
+        border-radius: 50%;
+        box-shadow: 0 0 0 0.0625rem var(--border);
+        height: 1.5rem;
+        margin-top: -0.5625rem;
+        width: 1.5rem;
+      }
+
+      .page__range-input::-moz-range-track {
+        background: var(--border);
+        border: none;
+        border-radius: 999rem;
+        height: 0.375rem;
+      }
+
+      .page__range-input::-moz-range-thumb {
+        background: var(--accent);
+        border: 0.125rem solid var(--bg-secondary);
+        border-radius: 50%;
+        box-shadow: 0 0 0 0.0625rem var(--border);
+        height: 1.5rem;
+        width: 1.5rem;
+      }
+
+      .page__range-value {
+        background: rgba(76, 175, 80, 0.14);
+        border: 0.0625rem solid var(--border);
+        border-radius: 999rem;
+        color: var(--text-primary);
+        font-size: 0.85rem;
+        font-weight: 600;
+        min-width: 2.5rem;
+        padding: 0.25rem 0.625rem;
+        text-align: center;
+      }
+
+      .page__translation-select {
         background: var(--input-bg);
         border: 0.0625rem solid var(--border);
         border-radius: 0.375rem;
         color: var(--text-primary);
         font-size: 0.95rem;
+        min-height: 2.75rem;
         padding: 0.5rem 0.75rem;
         transition: all 0.2s;
+        width: 100%;
       }
 
       .page__theme-toggle {
-        background: var(--accent);
-        border: none;
-        color: white;
+        align-items: center;
+        background: var(--bg-secondary);
+        border: 0.0625rem solid var(--border);
+        border-radius: 999rem;
+        color: var(--text-primary);
         cursor: pointer;
-        font-weight: 500;
+        display: inline-flex;
+        flex: 0 0 auto;
+        font-size: 1.125rem;
+        justify-content: center;
+        height: 2.625rem;
+        line-height: 1;
+        padding: 0;
+        transition:
+          background 0.2s,
+          border-color 0.2s,
+          color 0.2s,
+          transform 0.2s;
+        width: 2.625rem;
       }
 
       .page__theme-toggle:hover {
-        background: var(--accent-hover);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .page__theme-toggle:active {
+        transform: scale(0.96);
       }
 
       .page__theme-toggle:disabled {
@@ -131,6 +349,29 @@
 
       .page__translation-label {
         font-size: 0.9rem;
+        font-weight: 500;
+      }
+
+      @media (min-width: 34rem) {
+        .page__settings-group--primary {
+          align-items: center;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-start;
+        }
+
+        .page__settings-group--secondary {
+          align-items: center;
+          display: flex;
+        }
+
+        .page__translation-select {
+          width: 100%;
+        }
+
+        .page__theme-toggle {
+          width: 2.625rem;
+        }
       }
 
       .page__link {
@@ -168,6 +409,10 @@
           justify-content: space-between;
         }
 
+        .page__header-bar {
+          width: 100%;
+        }
+
         .page__title {
           font-size: 1.6rem;
         }
@@ -175,48 +420,112 @@
         .page__controls {
           width: auto;
         }
+
+        .page__settings-panel {
+          padding: 1rem;
+        }
       }
     </style>
   </head>
   <body>
     <div class="page">
       <header class="page__header">
-        <h1 class="page__title">
-          <a
-            class="page__link page__title-link page__title-link--icon"
-            href="https://bible-tools.github.io/app/"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Bible Tools - App (opens in new tab)"
-            >📖</a
-          >
-          <a
-            class="page__link page__title-link"
-            id="titleReloadLink"
-            href="https://bible-tools.github.io/game/"
-            aria-label="Bible Tools - Game home"
-            >Bible Tools - Game</a
-          >
-        </h1>
-        <div class="page__controls">
-          <label class="page__translation-label" for="translation"
+        <div class="page__header-bar">
+          <h1 class="page__title">
+            <a
+              class="page__link page__title-link page__title-link--icon"
+              href="https://bible-tools.github.io/game/"
+              aria-label="Bible Tools - Game"
+              >📖</a
+            >
+            <a
+              class="page__link page__title-link"
+              id="titleReloadLink"
+              href="https://bible-tools.github.io/game/"
+              aria-label="Bible Tools - Game home"
+              >Bible Tools - Game</a
+            >
+          </h1>
+          <div class="page__header-actions">
+            <button
+              class="page__theme-toggle"
+              id="themeToggle"
+              aria-label="Switch to dark theme"
+              aria-pressed="false"
+              type="button"
+            >
+              🌙
+            </button>
+            <button
+              class="page__settings-toggle"
+              id="settingsToggle"
+              aria-label="Toggle settings panel"
+              aria-controls="settingsPanel"
+              aria-expanded="false"
+              type="button"
+            >
+              <svg
+                class="page__settings-toggle-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="currentColor"
+                  d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.18 7.18 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.49-.42h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 7.88a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.51.4 1.05.71 1.63.94l.36 2.54a.5.5 0 0 0 .49.42h3.84a.5.5 0 0 0 .49-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <section
+        class="page__settings-panel"
+        id="settingsPanel"
+        aria-label="Game settings"
+        hidden
+      >
+        <div class="page__settings-group page__settings-group--primary">
+          <label
+            class="page__translation-label"
+            id="translationLabel"
+            for="translation"
             >Translation:</label
           >
           <select
             class="page__translation-select"
             id="translation"
-            aria-label="Select translation"
+            aria-labelledby="translationLabel"
           ></select>
-          <button
-            class="page__theme-toggle"
-            id="themeToggle"
-            aria-label="Toggle dark theme"
-            aria-pressed="false"
-          >
-            🌙 Dark
-          </button>
         </div>
-      </header>
+        <div class="page__settings-group page__settings-group--secondary">
+          <label
+            class="page__settings-label"
+            id="verseRangeLabel"
+            for="verseRange"
+            >Verse Range:</label
+          >
+          <div class="page__range">
+            <input
+              class="page__range-input"
+              id="verseRange"
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value="1"
+              aria-labelledby="verseRangeLabel"
+            />
+            <span
+              class="page__range-value"
+              id="verseRangeValue"
+              aria-live="polite"
+              >1</span
+            >
+          </div>
+        </div>
+      </section>
 
       <bible-tools-game id="game"></bible-tools-game>
 
@@ -332,6 +641,83 @@
           chapterKey,
           verseNum,
         };
+      }
+
+      const MIN_VERSE_RANGE = 1;
+      const MAX_VERSE_RANGE = 10;
+
+      function normalizeSearchText(value) {
+        return String(value || "")
+          .normalize("NFKD")
+          .replace(/[\p{M}]/gu, "")
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}]+/gu, " ")
+          .trim()
+          .replace(/\s+/g, " ");
+      }
+
+      function getBookSearchTerms(bookName) {
+        const normalized = normalizeSearchText(bookName);
+
+        if (!normalized) {
+          return [];
+        }
+
+        const terms = new Set([normalized]);
+        const stemmed = normalized.replace(/^(?:[\p{N}]+|[ivx]+)[\s.]+/iu, "");
+
+        if (stemmed && stemmed !== normalized) {
+          terms.add(stemmed);
+        }
+
+        return Array.from(terms);
+      }
+
+      function verseContainsBookName(verseText, bookName) {
+        const normalizedVerse = ` ${normalizeSearchText(verseText)} `;
+        const bookNames = Array.isArray(bookName) ? bookName : [bookName];
+
+        return bookNames.some((name) =>
+          getBookSearchTerms(name).some((term) =>
+            normalizedVerse.includes(` ${term} `),
+          ),
+        );
+      }
+
+      function clampVerseRange(value, maxValue) {
+        const parsedValue = Number.parseInt(value, 10);
+        const upperBound = Math.max(
+          MIN_VERSE_RANGE,
+          maxValue || MAX_VERSE_RANGE,
+        );
+
+        if (!Number.isFinite(parsedValue)) {
+          return MIN_VERSE_RANGE;
+        }
+
+        return Math.min(Math.max(parsedValue, MIN_VERSE_RANGE), upperBound);
+      }
+
+      function getChapterVerseCount(reference, book, chapterKey) {
+        return (
+          Number(reference?.books?.[book]?.chapters?.[chapterKey]?.verses) || 0
+        );
+      }
+
+      function formatVerseReference(chapter, startVerse, endVerse) {
+        if (!chapter || !startVerse) {
+          return "";
+        }
+
+        const hasRange = endVerse && endVerse > startVerse;
+
+        return hasRange
+          ? `${chapter}:${startVerse}-${endVerse}`
+          : `${chapter}:${startVerse}`;
+      }
+
+      function joinVerseTexts(verseTexts) {
+        return verseTexts.filter(Boolean).join(" ");
       }
 
       // Definitive translation options from https://bible-tools.github.io/app/dist/esm/BibleToolsPreferences.js.
@@ -738,6 +1124,7 @@
       function getCanonicalBookNameByIndex(bookIndex, languageCode) {
         const books =
           CANONICAL_BOOK_NAMES[languageCode] || CANONICAL_BOOK_NAMES.en;
+
         return books[bookIndex - 1] || null; // bookIndex is 1-based
       }
 
@@ -855,7 +1242,9 @@
 
       function populateTranslationSelect(selectedVersion) {
         const select = document.getElementById("translation");
-        if (!select) return;
+        if (!select) {
+          return;
+        }
 
         select.innerHTML = preferences.translations
           .map(
@@ -924,7 +1313,10 @@
             currentBookDisplay: null,
             currentChapter: null,
             currentVerseNum: null,
+            currentVerseEndNum: null,
             verseText: null,
+            verseRange: 1,
+            verseRangeMax: MAX_VERSE_RANGE,
             guesses: [],
             attempts: 0,
             solved: false,
@@ -937,6 +1329,9 @@
             pendingGuessInput: "",
             today: new Date(),
           };
+
+          this.shouldFocusGuessInput = true;
+          this.verseRangeLoadToken = 0;
 
           this.midnightTimerId = null;
           this.onPopState = () => {
@@ -1133,7 +1528,7 @@
             }
 
             .game__input {
-              width: 100%;
+              max-width: 100%;
             }
 
             .game__button {
@@ -1283,6 +1678,14 @@
             ?.addEventListener("change", (e) =>
               this.handleTranslationChange(e.target.value),
             );
+
+          document
+            .getElementById("verseRange")
+            ?.addEventListener("input", (e) =>
+              this.handleVerseRangeChange(e.target.value, {
+                preserveGuessInput: true,
+              }),
+            );
         }
 
         setupGlobalEvents() {
@@ -1411,7 +1814,9 @@
         }
 
         handleTranslationChange(nextTranslation) {
-          if (!translationByVersion[nextTranslation]) return;
+          if (!translationByVersion[nextTranslation]) {
+            return;
+          }
 
           const input = this.shadowRoot?.getElementById("guessInput");
 
@@ -1443,6 +1848,31 @@
           }
 
           this.loadGame();
+        }
+
+        handleVerseRangeChange(nextValue, { preserveGuessInput = false } = {}) {
+          const input = this.shadowRoot?.getElementById("guessInput");
+
+          if (preserveGuessInput) {
+            this.state.pendingGuessInput = input?.value ?? "";
+          }
+
+          if (
+            !this.state.currentBook ||
+            !this.state.currentChapter ||
+            !this.state.currentVerseNum
+          ) {
+            const rangeValue = clampVerseRange(
+              nextValue,
+              this.state.verseRangeMax,
+            );
+            this.state.verseRange = rangeValue;
+            this.syncVerseRangeControls();
+
+            return;
+          }
+
+          void this.applyVerseRange(nextValue, { focusGuessInput: false });
         }
 
         resetCurrentGame() {
@@ -1576,6 +2006,10 @@
 
           this.state.loading = true;
           this.state.error = null;
+          this.state.currentVerseEndNum = null;
+          this.state.verseRange = MIN_VERSE_RANGE;
+          this.state.verseRangeMax = MAX_VERSE_RANGE;
+          this.syncVerseRangeControls();
           this.updateUI();
 
           try {
@@ -1609,22 +2043,23 @@
               this.state.filteredCanonicalBooks,
             );
 
-            // Fetch the verse
-            const verseData = await this.fetchVerse(
-              selection.book,
-              selection.chapterKey,
-              selection.verseNum,
+            const validSelection = await this.findValidVerseSelection(
+              reference,
+              selection,
             );
 
-            this.state.currentBook = selection.book;
+            this.state.currentBook = validSelection.selection.book;
             this.state.currentBookDisplay =
-              this.state.bookNameMap[selection.book] || selection.book;
-            this.state.currentChapter = selection.chapter;
-            this.state.currentVerseNum = selection.verseNum;
-            this.state.verseText = verseData.text;
+              this.state.bookNameMap[validSelection.selection.book] ||
+              validSelection.selection.book;
+            this.state.currentChapter = validSelection.selection.chapter;
+            this.state.currentVerseNum = validSelection.selection.verseNum;
+            this.state.verseText = validSelection.verseData.text;
             this.state.loading = false;
 
-            this.updateUI();
+            await this.applyVerseRange(MIN_VERSE_RANGE, {
+              initialVerseText: validSelection.verseData.text,
+            });
           } catch (err) {
             console.error("Error loading game:", err);
 
@@ -1640,7 +2075,9 @@
             const baseUrl = getTranslationBaseUrl(this.state.translation);
             const res = await fetch(`${baseUrl}/reference.json`);
 
-            if (!res.ok) throw new Error("Failed to fetch reference");
+            if (!res.ok) {
+              throw new Error("Failed to fetch reference");
+            }
 
             this.state.referenceCache = await res.json();
           }
@@ -1654,9 +2091,147 @@
           const url = `${baseUrl}/${bookUrl}/${chapter}/${verse}/index.json`;
           const res = await fetch(url);
 
-          if (!res.ok) throw new Error(`Verse not found: ${url}`);
+          if (!res.ok) {
+            throw new Error(`Verse not found: ${url}`);
+          }
 
           return res.json();
+        }
+
+        getVerseRangeLimit(reference, book, chapterKey, verseNum) {
+          const verseCount = getChapterVerseCount(reference, book, chapterKey);
+
+          if (verseCount <= 0) {
+            return MIN_VERSE_RANGE;
+          }
+
+          return Math.min(MAX_VERSE_RANGE, verseCount - verseNum + 1);
+        }
+
+        syncVerseRangeControls() {
+          const rangeInput = document.getElementById("verseRange");
+          const rangeValueLabel = document.getElementById("verseRangeValue");
+          const rangeValue = clampVerseRange(
+            this.state.verseRange,
+            this.state.verseRangeMax,
+          );
+
+          this.state.verseRange = rangeValue;
+
+          if (rangeInput) {
+            rangeInput.min = String(MIN_VERSE_RANGE);
+            rangeInput.max = String(
+              Math.max(MIN_VERSE_RANGE, this.state.verseRangeMax),
+            );
+            rangeInput.step = "1";
+            rangeInput.value = String(rangeValue);
+          }
+
+          if (rangeValueLabel) {
+            rangeValueLabel.textContent = String(rangeValue);
+          }
+        }
+
+        formatVerseReference() {
+          return formatVerseReference(
+            this.state.currentChapter,
+            this.state.currentVerseNum,
+            this.state.currentVerseEndNum || this.state.currentVerseNum,
+          );
+        }
+
+        async applyVerseRange(
+          nextValue,
+          { focusGuessInput = true, initialVerseText = null } = {},
+        ) {
+          if (
+            !this.state.currentBook ||
+            !this.state.currentChapter ||
+            !this.state.currentVerseNum
+          ) {
+            return;
+          }
+
+          const reference = await this.getReference();
+          const chapterKey = String(this.state.currentChapter);
+          const rangeMax = this.getVerseRangeLimit(
+            reference,
+            this.state.currentBook,
+            chapterKey,
+            this.state.currentVerseNum,
+          );
+          const rangeValue = clampVerseRange(nextValue, rangeMax);
+          const startVerse = this.state.currentVerseNum;
+          const endVerse = startVerse + rangeValue - 1;
+
+          this.state.verseRangeMax = rangeMax;
+          this.state.verseRange = rangeValue;
+          this.state.currentVerseEndNum = endVerse;
+          this.syncVerseRangeControls();
+
+          const token = ++this.verseRangeLoadToken;
+
+          if (rangeValue === MIN_VERSE_RANGE && initialVerseText !== null) {
+            this.state.verseText = initialVerseText;
+            this.updateUI({ focusGuessInput });
+
+            return;
+          }
+
+          const verseTexts = [];
+
+          for (let verseNum = startVerse; verseNum <= endVerse; verseNum++) {
+            const verseData = await this.fetchVerse(
+              this.state.currentBook,
+              chapterKey,
+              verseNum,
+            );
+
+            verseTexts.push(verseData.text);
+          }
+
+          if (token !== this.verseRangeLoadToken) {
+            return;
+          }
+
+          this.state.verseText = joinVerseTexts(verseTexts);
+          this.updateUI({ focusGuessInput });
+        }
+
+        async findValidVerseSelection(reference, initialSelection) {
+          const maxAttempts = 20;
+          let selection = initialSelection;
+          let lastSuccessfulResult = null;
+
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            if (attempt > 0) {
+              selection = derivePuzzleSelection(
+                reference,
+                `${this.state.puzzleId}:${attempt}`,
+                this.state.filteredCanonicalBooks,
+              );
+            }
+
+            const verseData = await this.fetchVerse(
+              selection.book,
+              selection.chapterKey,
+              selection.verseNum,
+            );
+            lastSuccessfulResult = { selection, verseData };
+            // Check both the localized label and the canonical book key so translation-specific naming does not miss a match.
+            const bookDisplay = this.state.bookNameMap[selection.book];
+
+            if (
+              !verseContainsBookName(verseData.text, [
+                bookDisplay,
+                selection.book,
+              ])
+            ) {
+              return lastSuccessfulResult;
+            }
+          }
+
+          return lastSuccessfulResult;
         }
 
         async getBookNameMap(reference) {
@@ -1682,6 +2257,7 @@
 
             if (canonicalIndex === -1) {
               builtFromStatic = false;
+
               continue;
             }
 
@@ -1704,6 +2280,7 @@
           ) {
             this.state.localizedBookNamesCache[this.state.translation] =
               staticMap;
+
             return staticMap;
           }
 
@@ -1735,7 +2312,9 @@
           return filtered.length > 0 ? filtered : canonicalBooks;
         }
 
-        updateUI() {
+        updateUI({ focusGuessInput = true } = {}) {
+          this.shouldFocusGuessInput = focusGuessInput;
+
           const root = this.shadowRoot;
           const content = root.getElementById("mainContent");
 
@@ -1755,7 +2334,7 @@
           let html = `
             <div class="game__verse-card">
               <div class="game__verse-text">"${this.escapeHtml(this.state.verseText)}"</div>
-              <div class="game__verse-ref">${this.state.translation} • ${this.state.currentChapter}:${this.state.currentVerseNum} • ${this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random"}</div>
+              <div class="game__verse-ref">${this.state.translation} • ${this.formatVerseReference()} • ${this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random"}</div>
             </div>
 
             <div class="game__section" aria-labelledby="guessPrompt">
@@ -1873,12 +2452,14 @@
         }
 
         renderAnswerReveal() {
-          if (!this.state.gameOver) return "";
+          if (!this.state.gameOver) {
+            return "";
+          }
 
           return `
             <div class="game__answer-reveal game__answer-reveal--show">
               <strong class="game__answer-label">Answer:</strong> ${this.escapeHtml(this.state.currentBookDisplay || this.state.currentBook)}
-              ${this.state.currentChapter}:${this.state.currentVerseNum}
+              ${this.formatVerseReference()}
             </div>
           `;
         }
@@ -1895,7 +2476,10 @@
           const copyLinkBtn = this.shadowRoot.getElementById("copyLinkBtn");
 
           if (input) {
-            input.focus();
+            if (this.shouldFocusGuessInput) {
+              input.focus();
+            }
+
             input.addEventListener("input", () => this.handleInput(input));
             input.addEventListener("keydown", (e) =>
               this.handleInputKeydown(e, input, feedback),
@@ -1907,6 +2491,8 @@
               this.handleInput(input);
             }
           }
+
+          this.shouldFocusGuessInput = true;
 
           if (submitBtn) {
             submitBtn.addEventListener("click", () => {
@@ -1960,7 +2546,9 @@
         }
 
         handleGuess(input, feedbackEl) {
-          if (!input || this.state.gameOver) return;
+          if (!input || this.state.gameOver) {
+            return;
+          }
 
           const guess = this.sanitizeGuess(input.value);
           input.value = guess;
@@ -2037,7 +2625,7 @@
 
           return {
             title: "Bible Tools - Game",
-            text: `I solved the ${gameType} Bible verse puzzle in ${guessesUsed} guess${guessesUsed === 1 ? "" : "es"}! (${targetDisplay} ${this.state.currentChapter}:${this.state.currentVerseNum})`,
+            text: `I solved the ${gameType} Bible verse puzzle in ${guessesUsed} guess${guessesUsed === 1 ? "" : "es"}! (${targetDisplay} ${this.formatVerseReference()})`,
             url: this.getShareUrl(),
           };
         }
@@ -2244,6 +2832,7 @@
         handleInput(input) {
           if (this.state.gameOver) {
             this.clearSuggestions();
+
             return;
           }
 
@@ -2255,6 +2844,7 @@
             Boolean(queryOrdinal) && queryNorm.split(" ").length === 1;
           if (!this.sanitizeGuess(rawValue)) {
             this.clearSuggestions();
+
             return;
           }
 
@@ -2271,6 +2861,7 @@
             this.state.suggestionList = books;
             this.state.activeSuggestion = -1;
             this.renderSuggestionItems(input);
+
             return;
           }
 
@@ -2322,7 +2913,9 @@
 
         renderSuggestionItems(input) {
           const list = this.shadowRoot.getElementById("suggestionsList");
-          if (!list) return;
+          if (!list) {
+            return;
+          }
 
           if (input) {
             input.setAttribute(
@@ -2333,12 +2926,14 @@
 
           if (this.state.suggestionList.length === 0) {
             list.innerHTML = "";
+
             return;
           }
 
           list.innerHTML = this.state.suggestionList
             .map((book, index) => {
               const isActive = index === this.state.activeSuggestion;
+
               return `<li class="game__suggestion-item" role="option" id="suggestion-${index}" aria-selected="${isActive ? "true" : "false"}" data-value="${this.escapeHtml(book)}">${this.escapeHtml(book)}</li>`;
             })
             .join("");
@@ -2389,7 +2984,9 @@
           this.state.activeSuggestion = -1;
           const list = this.shadowRoot.getElementById("suggestionsList");
           const input = this.shadowRoot.getElementById("guessInput");
-          if (list) list.innerHTML = "";
+          if (list) {
+            list.innerHTML = "";
+          }
 
           if (input) {
             input.setAttribute("aria-expanded", "false");
@@ -2400,7 +2997,9 @@
         updateActiveSuggestion() {
           const list = this.shadowRoot.getElementById("suggestionsList");
           const input = this.shadowRoot.getElementById("guessInput");
-          if (!list) return;
+          if (!list) {
+            return;
+          }
 
           list.querySelectorAll(".game__suggestion-item").forEach((item, i) => {
             const isActive = i === this.state.activeSuggestion;
@@ -2431,7 +3030,10 @@
 
       // Theme toggle
       const THEME_STORAGE_KEY = "bible-tools-game-theme";
+      const SETTINGS_STORAGE_KEY = "bible-tools-game-settings-open";
       const themeToggle = document.getElementById("themeToggle");
+      const settingsToggle = document.getElementById("settingsToggle");
+      const settingsPanel = document.getElementById("settingsPanel");
       const titleReloadLink = document.getElementById("titleReloadLink");
       const html = document.documentElement;
 
@@ -2464,10 +3066,14 @@
 
         if (isDark) {
           html.setAttribute("data-theme", "dark");
-          themeToggle.textContent = "☀️ Light";
+          themeToggle.textContent = "☀️";
+          themeToggle.setAttribute("aria-label", "Switch to light theme");
+          themeToggle.setAttribute("title", "Switch to light theme");
         } else {
           html.removeAttribute("data-theme");
-          themeToggle.textContent = "🌙 Dark";
+          themeToggle.textContent = "🌙";
+          themeToggle.setAttribute("aria-label", "Switch to dark theme");
+          themeToggle.setAttribute("title", "Switch to dark theme");
         }
 
         themeToggle.setAttribute("aria-pressed", isDark ? "true" : "false");
@@ -2484,6 +3090,36 @@
           html.getAttribute("data-theme") === "dark" ? "light" : "dark";
 
         applyTheme(nextTheme, true);
+      });
+
+      function getStoredSettingsVisibility() {
+        return localStorage.getItem(SETTINGS_STORAGE_KEY) === "open";
+      }
+
+      function applySettingsVisibility(isOpen, persist = false) {
+        if (!settingsPanel || !settingsToggle) {
+          return;
+        }
+
+        settingsPanel.hidden = !isOpen;
+        settingsToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        settingsToggle.setAttribute(
+          "aria-label",
+          isOpen ? "Hide settings panel" : "Show settings panel",
+        );
+
+        if (persist) {
+          localStorage.setItem(
+            SETTINGS_STORAGE_KEY,
+            isOpen ? "open" : "closed",
+          );
+        }
+      }
+
+      applySettingsVisibility(getStoredSettingsVisibility());
+
+      settingsToggle?.addEventListener("click", () => {
+        applySettingsVisibility(settingsPanel?.hidden, true);
       });
     </script>
     <script type="module" src="service-worker/init.mjs"></script>

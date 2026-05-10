@@ -1,4 +1,4 @@
-import { Workbox } from "https://cdn.jsdelivr.net/npm/workbox-window@7.4.0/build/workbox-window.prod.umd.min.js";
+import { Workbox } from "https://cdn.jsdelivr.net/npm/workbox-window@7.4.0/build/workbox-window.prod.mjs";
 
 globalThis.isLocalhost = globalThis.location.host === "localhost:3000";
 
