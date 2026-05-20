@@ -1,10 +1,6 @@
 module.exports = {
   globDirectory: "./",
-  globPatterns: [
-    "**/**.html",
-    "**/**.js",
-    "**/**.mjs",
-  ],
+  globPatterns: ["**/**.html", "**/**.js", "**/**.mjs"],
   globIgnores: [
     "**/**.json",
     "**/node_modules/**",

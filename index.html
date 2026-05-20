@@ -109,6 +109,13 @@
         margin-left: auto;
       }
 
+      .page__mode-subtitle {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
       @media (max-width: 30rem) {
         .page__header-bar {
           gap: 0.5rem;
@@ -180,6 +187,7 @@
         display: grid;
         gap: 0.875rem;
         margin-bottom: 1.25rem;
+        margin-top: 1rem;
         overflow: hidden;
         padding: 0.875rem;
         transition:
@@ -291,6 +299,36 @@
         min-width: 2.5rem;
         padding: 0.25rem 0.625rem;
         text-align: center;
+      }
+
+      .page__visually-hidden {
+        clip: rect(0 0 0 0);
+        clip-path: inset(50%);
+        height: 1px;
+        overflow: hidden;
+        position: absolute;
+        white-space: nowrap;
+        width: 1px;
+      }
+
+      .page__testament-fieldset {
+        border: none;
+        display: grid;
+        gap: 0.5rem;
+        padding: 0;
+        width: 100%;
+      }
+
+      .page__testament-row {
+        align-items: center;
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .page__testament-label {
+        font-size: 0.85rem;
+        min-width: 7.5rem;
       }
 
       .page__translation-select {
@@ -480,6 +518,10 @@
         </div>
       </header>
 
+      <h2 class="page__mode-subtitle" id="puzzleModeHeading">
+        Puzzle Mode: Daily
+      </h2>
+
       <section
         class="page__settings-panel"
         id="settingsPanel"
@@ -498,6 +540,64 @@
             id="translation"
             aria-labelledby="translationLabel"
           ></select>
+        </div>
+        <div class="page__settings-group page__settings-group--secondary">
+          <fieldset
+            class="page__testament-fieldset"
+            aria-describedby="testamentDesc"
+          >
+            <p class="page__visually-hidden" id="testamentDesc">
+              These two sliders are linked and always total 100.
+            </p>
+            <div class="page__testament-row">
+              <label class="page__testament-label" id="otLabel" for="otPercent">
+                Old Testament %:
+              </label>
+              <div class="page__range">
+                <input
+                  class="page__range-input"
+                  id="otPercent"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                  aria-labelledby="otLabel"
+                />
+                <span
+                  class="page__range-value"
+                  id="otPercentValue"
+                  aria-live="polite"
+                >
+                  50
+                </span>
+              </div>
+            </div>
+            <div class="page__testament-row">
+              <label class="page__testament-label" id="ntLabel" for="ntPercent"
+                >New Testament %:</label
+              >
+              <div class="page__range">
+                <input
+                  class="page__range-input"
+                  id="ntPercent"
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value="50"
+                  aria-labelledby="ntLabel"
+                />
+                <span
+                  class="page__range-value"
+                  id="ntPercentValue"
+                  aria-live="polite"
+                >
+                  50
+                </span>
+              </div>
+            </div>
+          </fieldset>
         </div>
         <div class="page__settings-group page__settings-group--secondary">
           <label
@@ -552,6 +652,7 @@
       const API_ROOT = "https://bible-tools.github.io/data/translations";
       const PUZZLE_MODE_DAILY = "daily";
       const PUZZLE_MODE_RANDOM = "random";
+      const URL_PARAM_TESTAMENT_PERCENT = "per";
       const UINT32_MASK = 0xffffffff;
 
       function hashStringToUint32(value) {
@@ -575,6 +676,50 @@
 
       function makeDailyPuzzleId(dateKey) {
         return `daily:${dateKey}`;
+      }
+
+      function makeDailyPuzzleIdWithTestament(dateKey, otPercent) {
+        return `daily:${dateKey}:per${otPercent}`;
+      }
+
+      function formatDailyHeadingDateFromPuzzleId(puzzleId) {
+        const match = /^daily:(\d{4})-(\d{2})-(\d{2})(?::[^:]+)?$/.exec(
+          String(puzzleId || ""),
+        );
+
+        if (!match) {
+          return "";
+        }
+
+        return `${match[1]} / ${match[2]} / ${match[3]}`;
+      }
+
+      function updatePuzzleModeHeadingFromUrl() {
+        const heading = document.getElementById("puzzleModeHeading");
+
+        if (!heading) {
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const mode =
+          params.get("mode") === PUZZLE_MODE_RANDOM
+            ? PUZZLE_MODE_RANDOM
+            : PUZZLE_MODE_DAILY;
+
+        if (mode === PUZZLE_MODE_RANDOM) {
+          heading.textContent = "Puzzle Mode: Random";
+
+          return;
+        }
+
+        const dailyDate = formatDailyHeadingDateFromPuzzleId(
+          params.get("puzzle"),
+        );
+
+        heading.textContent = dailyDate
+          ? `Puzzle Mode: Daily - ${dailyDate}`
+          : "Puzzle Mode: Daily";
       }
 
       function makeRandomPuzzleId(previousId = "") {
@@ -645,6 +790,13 @@
 
       const MIN_VERSE_RANGE = 1;
       const MAX_VERSE_RANGE = 10;
+      const OT_CANONICAL_COUNT = 39;
+
+      function pickTestament(otPercent, puzzleId) {
+        const seed = hashStringToUint32(`${puzzleId}|testament`);
+        // seed % 100 yields 0-99; values below otPercent select Old Testament
+        return seed % 100 < otPercent ? "ot" : "nt";
+      }
 
       function normalizeSearchText(value) {
         return String(value || "")
@@ -776,7 +928,6 @@
         ]),
       );
 
-      // Static mapping of canonical book names across all translations (1-66 Protestant canon)
       // Keyed by language code, arrays are 1-indexed (position 0 is book 1)
       const CANONICAL_BOOK_NAMES = Object.freeze({
         en: [
@@ -1297,37 +1448,40 @@
           const initialTranslation = resolveInitialTranslationVersion();
 
           this.state = {
-            translation: initialTranslation,
-            referenceCache: null,
-            canonicalBooks: [],
-            filteredCanonicalBooks: [],
-            localizedBookNames: [],
+            activeSuggestion: -1,
+            animateLastRow: false,
+            attempts: 0,
             bookNameMap: {},
-            localizedBookNamesCache: {},
-            puzzleMode: PUZZLE_MODE_DAILY,
-            puzzleId: null,
-            puzzleHistory: [],
-            puzzleHistoryIndex: -1,
-            dailyDateKey: getLocalDateKey(),
+            canonicalBooks: [],
             currentBook: null,
             currentBookDisplay: null,
             currentChapter: null,
-            currentVerseNum: null,
             currentVerseEndNum: null,
-            verseText: null,
+            currentVerseNum: null,
+            dailyDateKey: getLocalDateKey(),
+            error: null,
+            filteredCanonicalBooks: [],
+            gameOver: false,
+            guesses: [],
+            loading: true,
+            localizedBookNames: [],
+            localizedBookNamesCache: {},
+            ntPercent: 50,
+            otPercent: 50,
+            pendingGuessInput: "",
+            puzzleHistory: [],
+            puzzleHistoryIndex: -1,
+            puzzleId: null,
+            puzzleMode: PUZZLE_MODE_DAILY,
+            referenceCache: null,
+            solved: false,
+            suggestionList: [],
+            testamentBooks: [],
+            today: new Date(),
+            translation: initialTranslation,
             verseRange: 1,
             verseRangeMax: MAX_VERSE_RANGE,
-            guesses: [],
-            attempts: 0,
-            solved: false,
-            gameOver: false,
-            loading: true,
-            error: null,
-            animateLastRow: false,
-            suggestionList: [],
-            activeSuggestion: -1,
-            pendingGuessInput: "",
-            today: new Date(),
+            verseText: null,
           };
 
           this.shouldFocusGuessInput = true;
@@ -1686,6 +1840,32 @@
                 preserveGuessInput: true,
               }),
             );
+
+          document
+            .getElementById("otPercent")
+            ?.addEventListener("input", (e) =>
+              this.handleTestamentInput(Number.parseInt(e.target.value, 10)),
+            );
+
+          document
+            .getElementById("otPercent")
+            ?.addEventListener("change", () =>
+              this.handleTestamentChangeComplete(),
+            );
+
+          document
+            .getElementById("ntPercent")
+            ?.addEventListener("input", (e) =>
+              this.handleTestamentInput(
+                100 - Number.parseInt(e.target.value, 10),
+              ),
+            );
+
+          document
+            .getElementById("ntPercent")
+            ?.addEventListener("change", () =>
+              this.handleTestamentChangeComplete(),
+            );
         }
 
         setupGlobalEvents() {
@@ -1709,6 +1889,30 @@
             translationSelect.value = this.state.translation;
           }
 
+          const requestedPerPercent = params.get(URL_PARAM_TESTAMENT_PERCENT);
+          const otPercentValue = Number.parseInt(requestedPerPercent ?? "", 10);
+
+          const safeOtPercent = Number.isFinite(otPercentValue)
+            ? otPercentValue
+            : 50;
+          this.state.otPercent = Math.max(0, Math.min(100, safeOtPercent));
+          this.state.ntPercent = 100 - this.state.otPercent;
+          this.syncTestamentControls();
+
+          const requestedVerseRange = params.get("verseRange");
+          const verseRangeValue = Number.parseInt(
+            requestedVerseRange ?? "",
+            10,
+          );
+          const safeVerseRange = Number.isFinite(verseRangeValue)
+            ? verseRangeValue
+            : MIN_VERSE_RANGE;
+          this.state.verseRange = clampVerseRange(
+            safeVerseRange,
+            MAX_VERSE_RANGE,
+          );
+          this.syncVerseRangeControls();
+
           const requestedMode = params.get("mode");
           const puzzleMode =
             requestedMode === PUZZLE_MODE_RANDOM
@@ -1724,14 +1928,39 @@
           let nextMode = puzzleMode;
           let nextPuzzleId = requestedPuzzleId;
 
+          if (
+            nextMode === PUZZLE_MODE_DAILY &&
+            typeof nextPuzzleId === "string"
+          ) {
+            nextPuzzleId = nextPuzzleId.replace(
+              /^(daily:[^:]+):ot(\d{1,3})$/,
+              "$1:per$2",
+            );
+          }
+
           if (!nextPuzzleId) {
             if (Number.isFinite(legacyHash)) {
               nextMode = PUZZLE_MODE_RANDOM;
               nextPuzzleId = `legacy:${Math.abs(legacyHash)}`;
             } else {
               nextMode = PUZZLE_MODE_DAILY;
-              nextPuzzleId = makeDailyPuzzleId(localDateKey);
+              nextPuzzleId = makeDailyPuzzleIdWithTestament(
+                localDateKey,
+                this.state.otPercent,
+              );
             }
+          }
+
+          // Normalize incomplete daily puzzle IDs to include date and testament
+          if (
+            nextMode === PUZZLE_MODE_DAILY &&
+            nextPuzzleId &&
+            !nextPuzzleId.includes(":")
+          ) {
+            nextPuzzleId = makeDailyPuzzleIdWithTestament(
+              localDateKey,
+              this.state.otPercent,
+            );
           }
 
           this.setPuzzle(nextPuzzleId, nextMode, {
@@ -1747,6 +1976,8 @@
           params.set("mode", this.state.puzzleMode);
           params.set("puzzle", this.state.puzzleId);
           params.set("translation", this.state.translation);
+          params.set(URL_PARAM_TESTAMENT_PERCENT, String(this.state.otPercent));
+          params.set("verseRange", String(this.state.verseRange));
 
           const nextQuery = params.toString();
           const nextUrl = `${window.location.pathname}?${nextQuery}${window.location.hash}`;
@@ -1756,6 +1987,8 @@
           } else {
             window.history.replaceState(null, "", nextUrl);
           }
+
+          updatePuzzleModeHeadingFromUrl();
         }
 
         setPuzzle(
@@ -1868,11 +2101,114 @@
             );
             this.state.verseRange = rangeValue;
             this.syncVerseRangeControls();
+            this.updateUrlState({ push: false });
 
             return;
           }
 
           void this.applyVerseRange(nextValue, { focusGuessInput: false });
+        }
+
+        handleTestamentInput(otPercent) {
+          const clamped = Math.max(0, Math.min(100, Math.round(otPercent)));
+
+          this.state.otPercent = clamped;
+          this.state.ntPercent = 100 - clamped;
+          this.syncTestamentControls();
+        }
+
+        handleTestamentChangeComplete() {
+          const input = this.shadowRoot?.getElementById("guessInput");
+
+          this.state.pendingGuessInput = input?.value ?? "";
+          this.resetPlayState();
+
+          if (this.state.puzzleMode === PUZZLE_MODE_DAILY) {
+            this.setPuzzle(
+              makeDailyPuzzleIdWithTestament(
+                this.state.dailyDateKey,
+                this.state.otPercent,
+              ),
+              PUZZLE_MODE_DAILY,
+              { addHistoryEntry: false, pushUrl: true },
+            );
+          }
+
+          this.updateUrlState({ push: true });
+          this.loadGame();
+        }
+
+        syncTestamentControls() {
+          const otInput = document.getElementById("otPercent");
+          const otValueEl = document.getElementById("otPercentValue");
+          const ntInput = document.getElementById("ntPercent");
+          const ntValueEl = document.getElementById("ntPercentValue");
+
+          if (otInput) {
+            otInput.value = String(this.state.otPercent);
+          }
+
+          if (otValueEl) {
+            otValueEl.textContent = String(this.state.otPercent);
+          }
+
+          if (ntInput) {
+            ntInput.value = String(this.state.ntPercent);
+          }
+
+          if (ntValueEl) {
+            ntValueEl.textContent = String(this.state.ntPercent);
+          }
+        }
+
+        splitBooksByTestament(filteredBooks) {
+          const otCanonical = COMMUNITY_DEFAULT_CANONICAL_BOOKS.slice(
+            0,
+            OT_CANONICAL_COUNT,
+          );
+
+          const ntCanonical =
+            COMMUNITY_DEFAULT_CANONICAL_BOOKS.slice(OT_CANONICAL_COUNT);
+
+          const ot = [];
+          const nt = [];
+
+          for (const book of filteredBooks) {
+            if (
+              ntCanonical.some((ntBook) =>
+                this.isEquivalentBookLabel(book, ntBook),
+              )
+            ) {
+              nt.push(book);
+            } else if (
+              otCanonical.some((otBook) =>
+                this.isEquivalentBookLabel(book, otBook),
+              )
+            ) {
+              ot.push(book);
+            }
+          }
+
+          return { ot, nt };
+        }
+
+        getTestamentFilteredBooks(filteredBooks) {
+          const { ot, nt } = this.splitBooksByTestament(filteredBooks);
+
+          if (ot.length === 0) {
+            return nt;
+          }
+
+          if (nt.length === 0) {
+            return ot;
+          }
+
+          const testament = pickTestament(
+            this.state.otPercent,
+            this.state.puzzleId,
+          );
+
+          return testament === "ot" ? ot : nt;
         }
 
         resetCurrentGame() {
@@ -2007,7 +2343,10 @@
           this.state.loading = true;
           this.state.error = null;
           this.state.currentVerseEndNum = null;
-          this.state.verseRange = MIN_VERSE_RANGE;
+          this.state.verseRange = clampVerseRange(
+            this.state.verseRange,
+            MAX_VERSE_RANGE,
+          );
           this.state.verseRangeMax = MAX_VERSE_RANGE;
           this.syncVerseRangeControls();
           this.updateUI();
@@ -2032,6 +2371,10 @@
               );
             }
 
+            this.state.testamentBooks = this.getTestamentFilteredBooks(
+              this.state.filteredCanonicalBooks,
+            );
+
             this.state.localizedBookNames =
               this.state.filteredCanonicalBooks.map(
                 (book) => this.state.bookNameMap[book] || book,
@@ -2040,7 +2383,7 @@
             const selection = derivePuzzleSelection(
               reference,
               this.state.puzzleId,
-              this.state.filteredCanonicalBooks,
+              this.state.testamentBooks,
             );
 
             const validSelection = await this.findValidVerseSelection(
@@ -2057,7 +2400,7 @@
             this.state.verseText = validSelection.verseData.text;
             this.state.loading = false;
 
-            await this.applyVerseRange(MIN_VERSE_RANGE, {
+            await this.applyVerseRange(this.state.verseRange, {
               initialVerseText: validSelection.verseData.text,
             });
           } catch (err) {
@@ -2168,6 +2511,7 @@
           this.state.verseRange = rangeValue;
           this.state.currentVerseEndNum = endVerse;
           this.syncVerseRangeControls();
+          this.updateUrlState({ push: false });
 
           const token = ++this.verseRangeLoadToken;
 
@@ -2208,7 +2552,9 @@
               selection = derivePuzzleSelection(
                 reference,
                 `${this.state.puzzleId}:${attempt}`,
-                this.state.filteredCanonicalBooks,
+                this.state.testamentBooks.length > 0
+                  ? this.state.testamentBooks
+                  : this.state.filteredCanonicalBooks,
               );
             }
 
@@ -2334,7 +2680,7 @@
           let html = `
             <div class="game__verse-card">
               <div class="game__verse-text">"${this.escapeHtml(this.state.verseText)}"</div>
-              <div class="game__verse-ref">${this.state.translation} • ${this.formatVerseReference()} • ${this.state.puzzleMode === PUZZLE_MODE_DAILY ? "Daily" : "Random"}</div>
+              <div class="game__verse-ref">${this.state.translation} • ${this.formatVerseReference()}</div>
             </div>
 
             <div class="game__section" aria-labelledby="guessPrompt">
@@ -3027,6 +3373,7 @@
       populateTranslationSelect(resolveInitialTranslationVersion());
 
       customElements.define("bible-tools-game", BibleToolsGame);
+      updatePuzzleModeHeadingFromUrl();
 
       // Theme toggle
       const THEME_STORAGE_KEY = "bible-tools-game-theme";

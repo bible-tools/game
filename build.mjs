@@ -33,8 +33,7 @@ if (!indexHtml.includes(swInitTag)) {
     throw new Error("Could not find expected closing </body> in index.html");
   }
 
-  const updatedHtml =
-    `${indexHtml.slice(0, closingBodyIndex)}\n    ${swInitTag}${indexHtml.slice(closingBodyIndex)}`;
+  const updatedHtml = `${indexHtml.slice(0, closingBodyIndex)}\n    ${swInitTag}${indexHtml.slice(closingBodyIndex)}`;
 
   writeFileSync(indexPath, updatedHtml, "utf8");
   console.log("Added service worker init module to index.html.");
