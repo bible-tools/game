@@ -653,6 +653,8 @@
       const PUZZLE_MODE_DAILY = "daily";
       const PUZZLE_MODE_RANDOM = "random";
       const URL_PARAM_TESTAMENT_PERCENT = "per";
+      const VERSE_RANGE_APPLY_DEBOUNCE_MS = 250;
+      const TESTAMENT_APPLY_DEBOUNCE_MS = 250;
       const UINT32_MASK = 0xffffffff;
 
       function hashStringToUint32(value) {
@@ -676,10 +678,6 @@
 
       function makeDailyPuzzleId(dateKey) {
         return `daily:${dateKey}`;
-      }
-
-      function makeDailyPuzzleIdWithTestament(dateKey, otPercent) {
-        return `daily:${dateKey}:per${otPercent}`;
       }
 
       function formatDailyHeadingDateFromPuzzleId(puzzleId) {
@@ -1486,6 +1484,9 @@
 
           this.shouldFocusGuessInput = true;
           this.verseRangeLoadToken = 0;
+          this.verseRangeDebounceTimerId = null;
+          this.pendingVerseRangeValue = null;
+          this.testamentDebounceTimerId = null;
 
           this.midnightTimerId = null;
           this.onPopState = () => {
@@ -1514,6 +1515,11 @@
           if (this.midnightTimerId) {
             clearTimeout(this.midnightTimerId);
             this.midnightTimerId = null;
+          }
+
+          if (this.verseRangeDebounceTimerId) {
+            clearTimeout(this.verseRangeDebounceTimerId);
+            this.verseRangeDebounceTimerId = null;
           }
 
           window.removeEventListener("popstate", this.onPopState);
@@ -1841,31 +1847,64 @@
               }),
             );
 
-          document
-            .getElementById("otPercent")
-            ?.addEventListener("input", (e) =>
-              this.handleTestamentInput(Number.parseInt(e.target.value, 10)),
-            );
+          const verseRangeInput = document.getElementById("verseRange");
+          verseRangeInput?.addEventListener("keyup", () =>
+            this.flushVerseRangeChange(verseRangeInput.value),
+          );
+          verseRangeInput?.addEventListener("pointerup", () =>
+            this.flushVerseRangeChange(verseRangeInput.value),
+          );
+          verseRangeInput?.addEventListener("touchend", () =>
+            this.flushVerseRangeChange(verseRangeInput.value),
+          );
+          verseRangeInput?.addEventListener("touchcancel", () =>
+            this.flushVerseRangeChange(verseRangeInput.value),
+          );
+          verseRangeInput?.addEventListener("pointercancel", () =>
+            this.flushVerseRangeChange(verseRangeInput.value),
+          );
 
-          document
-            .getElementById("otPercent")
-            ?.addEventListener("change", () =>
-              this.handleTestamentChangeComplete(),
-            );
+          const otPercentInput = document.getElementById("otPercent");
+          otPercentInput?.addEventListener("input", (e) =>
+            this.handleTestamentInput(Number.parseInt(e.target.value, 10)),
+          );
+          otPercentInput?.addEventListener("keyup", () =>
+            this.flushTestamentChange(),
+          );
+          otPercentInput?.addEventListener("pointerup", () =>
+            this.flushTestamentChange(),
+          );
+          otPercentInput?.addEventListener("touchend", () =>
+            this.flushTestamentChange(),
+          );
+          otPercentInput?.addEventListener("touchcancel", () =>
+            this.flushTestamentChange(),
+          );
+          otPercentInput?.addEventListener("pointercancel", () =>
+            this.flushTestamentChange(),
+          );
 
-          document
-            .getElementById("ntPercent")
-            ?.addEventListener("input", (e) =>
-              this.handleTestamentInput(
-                100 - Number.parseInt(e.target.value, 10),
-              ),
-            );
-
-          document
-            .getElementById("ntPercent")
-            ?.addEventListener("change", () =>
-              this.handleTestamentChangeComplete(),
-            );
+          const ntPercentInput = document.getElementById("ntPercent");
+          ntPercentInput?.addEventListener("input", (e) =>
+            this.handleTestamentInput(
+              100 - Number.parseInt(e.target.value, 10),
+            ),
+          );
+          ntPercentInput?.addEventListener("keyup", () =>
+            this.flushTestamentChange(),
+          );
+          ntPercentInput?.addEventListener("pointerup", () =>
+            this.flushTestamentChange(),
+          );
+          ntPercentInput?.addEventListener("touchend", () =>
+            this.flushTestamentChange(),
+          );
+          ntPercentInput?.addEventListener("touchcancel", () =>
+            this.flushTestamentChange(),
+          );
+          ntPercentInput?.addEventListener("pointercancel", () =>
+            this.flushTestamentChange(),
+          );
         }
 
         setupGlobalEvents() {
@@ -1928,14 +1967,13 @@
           let nextMode = puzzleMode;
           let nextPuzzleId = requestedPuzzleId;
 
-          if (
-            nextMode === PUZZLE_MODE_DAILY &&
-            typeof nextPuzzleId === "string"
-          ) {
-            nextPuzzleId = nextPuzzleId.replace(
-              /^(daily:[^:]+):ot(\d{1,3})$/,
-              "$1:per$2",
-            );
+          const dailyPuzzleIdMatch =
+            nextMode === PUZZLE_MODE_DAILY && typeof nextPuzzleId === "string"
+              ? /^daily:(\d{4}-\d{2}-\d{2})(?::[^:]+)?$/.exec(nextPuzzleId)
+              : null;
+
+          if (dailyPuzzleIdMatch) {
+            nextPuzzleId = makeDailyPuzzleId(dailyPuzzleIdMatch[1]);
           }
 
           if (!nextPuzzleId) {
@@ -1944,23 +1982,16 @@
               nextPuzzleId = `legacy:${Math.abs(legacyHash)}`;
             } else {
               nextMode = PUZZLE_MODE_DAILY;
-              nextPuzzleId = makeDailyPuzzleIdWithTestament(
-                localDateKey,
-                this.state.otPercent,
-              );
+              nextPuzzleId = makeDailyPuzzleId(localDateKey);
             }
           }
 
-          // Normalize incomplete daily puzzle IDs to include date and testament
+          // Normalize malformed daily puzzle IDs to today's canonical daily ID.
           if (
             nextMode === PUZZLE_MODE_DAILY &&
-            nextPuzzleId &&
-            !nextPuzzleId.includes(":")
+            !/^daily:\d{4}-\d{2}-\d{2}$/.test(String(nextPuzzleId || ""))
           ) {
-            nextPuzzleId = makeDailyPuzzleIdWithTestament(
-              localDateKey,
-              this.state.otPercent,
-            );
+            nextPuzzleId = makeDailyPuzzleId(localDateKey);
           }
 
           this.setPuzzle(nextPuzzleId, nextMode, {
@@ -2013,6 +2044,18 @@
           if (typeof pushUrl === "boolean") {
             this.updateUrlState({ push: pushUrl });
           }
+        }
+
+        getSelectionSeed() {
+          if (!this.state.puzzleId) {
+            return "";
+          }
+
+          if (this.state.puzzleMode !== PUZZLE_MODE_DAILY) {
+            return this.state.puzzleId;
+          }
+
+          return `${this.state.puzzleId}:per${this.state.otPercent}`;
         }
 
         pushPuzzleHistoryEntry(entry, replaceCurrentHistoryEntry = false) {
@@ -2106,6 +2149,29 @@
             return;
           }
 
+          this.pendingVerseRangeValue = nextValue;
+
+          if (this.verseRangeDebounceTimerId) {
+            clearTimeout(this.verseRangeDebounceTimerId);
+          }
+
+          this.verseRangeDebounceTimerId = setTimeout(() => {
+            this.verseRangeDebounceTimerId = null;
+            const pendingValue =
+              this.pendingVerseRangeValue ?? this.state.verseRange;
+
+            this.pendingVerseRangeValue = null;
+            void this.applyVerseRange(pendingValue, { focusGuessInput: false });
+          }, VERSE_RANGE_APPLY_DEBOUNCE_MS);
+        }
+
+        flushVerseRangeChange(nextValue) {
+          if (this.verseRangeDebounceTimerId) {
+            clearTimeout(this.verseRangeDebounceTimerId);
+            this.verseRangeDebounceTimerId = null;
+          }
+
+          this.pendingVerseRangeValue = null;
           void this.applyVerseRange(nextValue, { focusGuessInput: false });
         }
 
@@ -2115,6 +2181,23 @@
           this.state.otPercent = clamped;
           this.state.ntPercent = 100 - clamped;
           this.syncTestamentControls();
+
+          if (this.testamentDebounceTimerId) {
+            clearTimeout(this.testamentDebounceTimerId);
+          }
+
+          this.testamentDebounceTimerId = setTimeout(() => {
+            this.testamentDebounceTimerId = null;
+            this.handleTestamentChangeComplete();
+          }, TESTAMENT_APPLY_DEBOUNCE_MS);
+        }
+
+        flushTestamentChange() {
+          if (this.testamentDebounceTimerId) {
+            clearTimeout(this.testamentDebounceTimerId);
+            this.testamentDebounceTimerId = null;
+            this.handleTestamentChangeComplete();
+          }
         }
 
         handleTestamentChangeComplete() {
@@ -2125,17 +2208,20 @@
 
           if (this.state.puzzleMode === PUZZLE_MODE_DAILY) {
             this.setPuzzle(
-              makeDailyPuzzleIdWithTestament(
-                this.state.dailyDateKey,
-                this.state.otPercent,
-              ),
+              makeDailyPuzzleId(this.state.dailyDateKey),
               PUZZLE_MODE_DAILY,
               { addHistoryEntry: false, pushUrl: true },
+            );
+          } else {
+            this.setPuzzle(
+              makeRandomPuzzleId(this.state.puzzleId || ""),
+              PUZZLE_MODE_RANDOM,
+              { addHistoryEntry: true, pushUrl: true },
             );
           }
 
           this.updateUrlState({ push: true });
-          this.loadGame();
+          this.loadGame({ focusGuessInput: false });
         }
 
         syncTestamentControls() {
@@ -2205,7 +2291,7 @@
 
           const testament = pickTestament(
             this.state.otPercent,
-            this.state.puzzleId,
+            this.getSelectionSeed(),
           );
 
           return testament === "ot" ? ot : nt;
@@ -2330,7 +2416,7 @@
           }, nextMidnight.getTime() - now.getTime());
         }
 
-        async loadGame() {
+        async loadGame({ focusGuessInput = true } = {}) {
           if (!this.state.puzzleId) {
             this.state.dailyDateKey = getLocalDateKey();
             this.setPuzzle(
@@ -2349,7 +2435,7 @@
           );
           this.state.verseRangeMax = MAX_VERSE_RANGE;
           this.syncVerseRangeControls();
-          this.updateUI();
+          this.updateUI({ focusGuessInput });
 
           try {
             // Load reference data
@@ -2382,7 +2468,7 @@
 
             const selection = derivePuzzleSelection(
               reference,
-              this.state.puzzleId,
+              this.getSelectionSeed(),
               this.state.testamentBooks,
             );
 
@@ -2401,6 +2487,7 @@
             this.state.loading = false;
 
             await this.applyVerseRange(this.state.verseRange, {
+              focusGuessInput,
               initialVerseText: validSelection.verseData.text,
             });
           } catch (err) {
@@ -2551,7 +2638,7 @@
             if (attempt > 0) {
               selection = derivePuzzleSelection(
                 reference,
-                `${this.state.puzzleId}:${attempt}`,
+                `${this.getSelectionSeed()}:${attempt}`,
                 this.state.testamentBooks.length > 0
                   ? this.state.testamentBooks
                   : this.state.filteredCanonicalBooks,
@@ -3463,10 +3550,77 @@
         }
       }
 
+      function getDeepActiveElement(root = document) {
+        const activeElement = root?.activeElement;
+
+        if (!activeElement) {
+          return null;
+        }
+
+        if (activeElement.shadowRoot?.activeElement) {
+          return getDeepActiveElement(activeElement.shadowRoot);
+        }
+
+        return activeElement;
+      }
+
+      function isFocusableTextInput(element) {
+        if (!(element instanceof HTMLElement)) {
+          return false;
+        }
+
+        if (element.isContentEditable) {
+          return true;
+        }
+
+        if (element instanceof HTMLTextAreaElement) {
+          return true;
+        }
+
+        if (!(element instanceof HTMLInputElement)) {
+          return false;
+        }
+
+        const inputType = (element.type || "text").toLowerCase();
+        const nonTextInputTypes = new Set([
+          "button",
+          "checkbox",
+          "color",
+          "file",
+          "hidden",
+          "image",
+          "radio",
+          "range",
+          "reset",
+          "submit",
+        ]);
+
+        return !nonTextInputTypes.has(inputType);
+      }
+
       applySettingsVisibility(getStoredSettingsVisibility());
 
       settingsToggle?.addEventListener("click", () => {
         applySettingsVisibility(settingsPanel?.hidden, true);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || !settingsPanel || settingsPanel.hidden) {
+          return;
+        }
+
+        const focusedElement = getDeepActiveElement();
+        const shouldRetainInputFocus =
+          isFocusableTextInput(focusedElement) &&
+          !settingsPanel.contains(focusedElement);
+
+        applySettingsVisibility(false, true);
+
+        if (shouldRetainInputFocus) {
+          requestAnimationFrame(() => {
+            focusedElement.focus({ preventScroll: true });
+          });
+        }
       });
     </script>
     <script type="module" src="service-worker/init.mjs"></script>
