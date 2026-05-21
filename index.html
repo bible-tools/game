@@ -198,7 +198,7 @@
       }
 
       .page__settings-panel[hidden] {
-        display: grid;
+        display: none;
         margin-bottom: 0;
         margin-top: -0.5rem;
         max-height: 0;
@@ -1508,7 +1508,7 @@
           this.applyUrlState({ addHistoryEntry: true });
           this.setupGlobalEvents();
           this.scheduleDailyRolloverCheck();
-          this.loadGame();
+          this.loadGame({ focusGuessInput: false });
         }
 
         disconnectedCallback() {
@@ -2123,7 +2123,7 @@
             );
           }
 
-          this.loadGame();
+          this.loadGame({ focusGuessInput: false });
         }
 
         handleVerseRangeChange(nextValue, { preserveGuessInput = false } = {}) {
@@ -3535,7 +3535,13 @@
           return;
         }
 
+        if (!isOpen && settingsPanel.contains(document.activeElement)) {
+          settingsToggle.focus({ preventScroll: true });
+        }
+
         settingsPanel.hidden = !isOpen;
+        settingsPanel.toggleAttribute("inert", !isOpen);
+        settingsPanel.setAttribute("aria-hidden", isOpen ? "false" : "true");
         settingsToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
         settingsToggle.setAttribute(
           "aria-label",
